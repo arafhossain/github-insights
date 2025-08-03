@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import GithubProvider from "next-auth/providers/github";
+import { GithubProfile } from "next-auth/providers/github";
 
 export default NextAuth({
   providers: [
@@ -9,9 +10,11 @@ export default NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, account }) {
-      if (account) {
+    async jwt({ token, account, profile }) {
+      if (account && profile) {
+        const ghProfile = profile as GithubProfile;
         token.accessToken = account.access_token;
+        token.username = ghProfile.login;
       }
       return token;
     },
@@ -19,6 +22,7 @@ export default NextAuth({
       return {
         ...session,
         accessToken: token.accessToken as string,
+        username: token.username as string,
       };
     },
   },
