@@ -1,9 +1,14 @@
+import { error } from "console";
 import { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed." });
+  }
+
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
@@ -11,19 +16,37 @@ export default async function handler(
   }
 
   const token = authHeader.split(" ")[1];
+  const { fullRepoName } = req.body;
 
-  const reposRes = await fetch(
-    "https://api.github.com/user/repos?per_page=100",
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/vnd.github+json",
-      },
+  if (!fullRepoName) {
+    return res.status(400).json({ error: "Missing full repo name." });
+  }
+
+  try {
+    const oneMonthAgo = new Date(
+      Date.now() - 30 * 24 * 60 * 60 * 1000
+    ).toISOString();
+
+    const commitRes = await fetch(
+      `https://api.github.com/repos/${fullRepoName}/commits?since=${oneMonthAgo}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/vnd.github+json",
+        },
+      }
+    );
+
+    if (!commitRes.ok) {
+      return res
+        .status(commitRes.status)
+        .json({ error: "Github API Error", status: commitRes.status });
     }
-  );
 
-  const repos = await reposRes.json();
+    const commits = await commitRes.json();
 
-  const repoNames = repos.map((repo: any) => repo.full_name);
-  res.status(200).json({ repos: repoNames });
+    res.status(200).json({ commits });
+  } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
 }
