@@ -1,6 +1,61 @@
 import { IRepoSection } from "@/pages";
 
-function buildPrompt(repos: IRepoSection[]): string {
+const NOISE_SUBSTRINGS = [
+  "node_modules/",
+  "dist/",
+  "build/",
+  ".next/",
+  "coverage/",
+  ".turbo/",
+  ".vercel/",
+  "public/",
+  ".map",
+  "package-lock.json",
+  "yarn.lock",
+  "pnpm-lock.yaml",
+  ".min.js",
+  ".min.css",
+  ".svg",
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".gif",
+  ".webp",
+];
+
+function isNoiseFile(filename: string) {
+  const lower = filename.toLowerCase();
+  return NOISE_SUBSTRINGS.some((p) => lower.includes(p));
+}
+
+// allow code-like files; include tests; exclude giant JSON by default
+const CODE_EXT = /\.(ts|tsx|js|jsx|mjs|cjs|py|go|rb|java|cs|cpp|c|rs|kt|php|sh|sql|mdx?)$/i;
+const TEST_FILE = /\.(test|spec)\.(ts|tsx|js|jsx)$/i;
+// small configs can be useful
+const SMALL_CONFIG = /(tsconfig\.json|eslint|prettier|vite\.config|next\.config)/i;
+
+export function isInteresting(
+  filename: string,
+  additions: number,
+  deletions: number
+) {
+  if (isNoiseFile(filename)) return false;
+  if (TEST_FILE.test(filename)) return true;
+  if (SMALL_CONFIG.test(filename)) return true;
+  if (CODE_EXT.test(filename)) return true;
+  // optionally allow tiny JSON changes (e.g., app settings)
+  if (filename.endsWith(".json") && additions + deletions <= 50) return true;
+  return false;
+}
+
+export function sanitizePatch(patch?: string, maxChars = 4000) {
+  if (!patch) return undefined;
+  return patch.length <= maxChars
+    ? patch
+    : patch.slice(0, maxChars) + "\n...[truncated]";
+}
+
+export function buildPrompt(repos: IRepoSection[]): string {
   const repoBlocks = repos.map(({ repo, payload }) => {
     const commits = payload
       .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))

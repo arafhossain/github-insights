@@ -1,4 +1,5 @@
 import { ICommitData } from "@/models/ICommitData";
+import { isInteresting, sanitizePatch } from "@/utils/functions";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { useState } from "react";
 
@@ -155,10 +156,13 @@ export default function Home() {
     }
   };
 
-  function sanitizePatch(patch?: string, maxChars = 4000) {
-    if (!patch) return undefined;
-    if (patch.length <= maxChars) return patch;
-    return patch.slice(0, maxChars) + "\n...[truncated]";
+  async function generateInsights(sections: IRepoSection[]) {
+    const res = await fetch("/api/generate-insights", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sections }),
+    });
+    return res.json();
   }
 
   function buildLLMPayload(commitContainer: ICommitContainer): CommitForLLM[] {
@@ -166,13 +170,14 @@ export default function Home() {
 
     for (const commitDetails of commitContainer.sha_content ?? []) {
       const files: CommitForLLM["files"] = [];
+
       for (const f of commitDetails.files ?? []) {
+        const churn = (f.additions ?? 0) + (f.deletions ?? 0);
+
+        if (churn > 2000) continue;
         // filter noisy / huge files
-        const isCode = /\.(ts|tsx|js|jsx|py|go|rb|java|cs|cpp|c|rs|kt|php|sh|sql)$/i.test(
-          f.filename
-        );
-        if (!isCode) continue;
-        if (f.additions + f.deletions > 2000) continue;
+        if (!isInteresting(f.filename, f.additions ?? 0, f.deletions ?? 0))
+          continue;
 
         files.push({
           filename: f.filename,
