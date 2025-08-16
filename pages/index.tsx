@@ -33,7 +33,7 @@ interface ICommitContainer {
   sha_content: any;
 }
 
-interface IRepoSection {
+export interface IRepoSection {
   repo: string;
   payload: CommitForLLM[];
 }
