@@ -25,7 +25,7 @@ export default async function handler(req:NextApiRequest, res: NextApiResponse) 
     }),
   });
 
-  if(!resp.ok) return res.status(500).json({error: "LLM Error", detail: await resp.text()});
+  if(!resp.ok) return res.status(500).json({error: "LLM Error", detail: JSON.parse(await resp.text())});
   const json = await resp.json();
   const summary = json.choices?.[0]?.message?.content ?? "";
   return res.status(200).json({summary});

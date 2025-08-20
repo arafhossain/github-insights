@@ -153,6 +153,10 @@ export default function Home() {
           payload: buildLLMPayload(commitContainer),
         };
       });
+
+      const INSIGHTS = await generateInsights(PAYLOADS);
+
+      if (INSIGHTS) console.log(INSIGHTS.summary);
     }
   };
 
