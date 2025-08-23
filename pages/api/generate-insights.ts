@@ -26,8 +26,23 @@ export default async function handler(req:NextApiRequest, res: NextApiResponse) 
   });
 
   if(!resp.ok) return res.status(500).json({error: "LLM Error", detail: JSON.parse(await resp.text())});
-  const json = await resp.json();
-  const summary = json.choices?.[0]?.message?.content ?? "";
-  return res.status(200).json({summary});
+
+const json = await resp.json();
+const summary = json.choices?.[0]?.message?.content ?? "";
+const usage = json.usage; // { prompt_tokens, completion_tokens, total_tokens } or undefined
+const model = "gpt-4o-mini";
+
+const inputCost  = (usage?.prompt_tokens ?? 0)     * 0.15 / 1_000_000;
+const outputCost = (usage?.completion_tokens ?? 0) * 0.60 / 1_000_000;
+const costUSD = Number((inputCost + outputCost).toFixed(6));
+
+return res.status(200).json({
+  summary,
+  usage,
+  costUSD,
+  model,
+  repos: req.body?.repos ?? [],
+  sinceISO: req.body?.sinceISO ?? null,
+});
 
 }
