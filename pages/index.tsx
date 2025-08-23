@@ -156,7 +156,7 @@ export default function Home() {
 
       const INSIGHTS = await generateInsights(PAYLOADS);
 
-      if (INSIGHTS) console.log(INSIGHTS.summary);
+      if (INSIGHTS) console.log(INSIGHTS);
     }
   };
 
@@ -266,7 +266,9 @@ export default function Home() {
                     value={repo}
                     disabled={selectedRepos.includes(repo)}
                   >
-                    {repo}
+                    {repo && repo.includes("/")
+                      ? repo.slice(repo.indexOf("/") + 1)
+                      : repo}
                   </option>
                 ))}
               </select>
@@ -281,7 +283,9 @@ export default function Home() {
                 <ul style={{ paddingLeft: "1rem", marginTop: "8px" }}>
                   {selectedRepos.map((repo) => (
                     <li key={repo} style={{ marginBottom: "4px" }}>
-                      {repo}{" "}
+                      {repo && repo.includes("/")
+                        ? repo.slice(repo.indexOf("/") + 1)
+                        : repo}{" "}
                       <button
                         onClick={() => handleRemove(repo)}
                         style={{
