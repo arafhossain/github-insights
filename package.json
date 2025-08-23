@@ -10,6 +10,7 @@
     "commit": "git cz"
   },
   "dependencies": {
+    "@prisma/client": "^6.14.0",
     "next": "15.4.3",
     "next-auth": "^4.24.11",
     "react": "19.1.0",
@@ -25,6 +26,7 @@
     "cz-emoji": "^1.3.2-canary.2",
     "eslint": "^9",
     "eslint-config-next": "15.4.3",
+    "prisma": "^6.14.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   },
