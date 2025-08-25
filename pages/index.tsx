@@ -47,6 +47,7 @@ export default function Home() {
   const [repoNames, setRepoNames] = useState<string[]>([]);
   const [selectedRepos, setSelectedRepos] = useState<string[]>([]);
   const [loadingRepos, setLoadingRepos] = useState(false);
+  const [summary, SetSummary] = useState("");
 
   const handleFetchRepos = async () => {
     setLoadingRepos(true);
@@ -156,7 +157,10 @@ export default function Home() {
 
       const INSIGHTS = await generateInsights(PAYLOADS);
 
-      if (INSIGHTS) console.log(INSIGHTS);
+      if (INSIGHTS) {
+        SetSummary(INSIGHTS.summary);
+        saveInsights(INSIGHTS);
+      }
     }
   };
 
@@ -167,6 +171,14 @@ export default function Home() {
       body: JSON.stringify({ sections }),
     });
     return res.json();
+  }
+
+  async function saveInsights(insights: any) {
+    await fetch("/api/save-summary", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(insights),
+    }).then((res) => console.log("Saved insights!"));
   }
 
   function buildLLMPayload(commitContainer: ICommitContainer): CommitForLLM[] {
@@ -302,6 +314,12 @@ export default function Home() {
                   ))}
                 </ul>
               )}
+            </div>
+          )}
+
+          {summary && summary !== "" && (
+            <div className="whitespace-pre-wrap font-mono text-sm leading-6">
+              {summary}
             </div>
           )}
 
