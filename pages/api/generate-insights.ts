@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(req:NextApiRequest, res: NextApiResponse) {
     const {sections} = req.body as {sections: {repo:string; payload: any[]}[]};
+    const {sinceISO} = req.body;
     if(!Array.isArray(sections) || sections.length === 0) {
         return res.status(400).json({error: "No sections provided"});
     }
@@ -42,7 +43,7 @@ return res.status(200).json({
   costUSD,
   model,
   repos: req.body?.repos ?? [],
-  sinceISO: req.body?.sinceISO ?? null,
+  sinceISO: sinceISO ?? null,
 });
 
 }

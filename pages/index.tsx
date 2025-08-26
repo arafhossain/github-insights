@@ -72,7 +72,7 @@ export default function Home() {
     setLoadingRepos(false);
   };
 
-  const handleFetchCommits = async (repoName: string) => {
+  const handleFetchCommits = async (repoName: string, sinceISO: string) => {
     try {
       const res = await fetch("/api/fetch-commits", {
         method: "POST",
@@ -82,6 +82,7 @@ export default function Home() {
         },
         body: JSON.stringify({
           fullRepoName: repoName,
+          sinceISO,
         }),
       });
 
@@ -112,11 +113,12 @@ export default function Home() {
   };
 
   const fetchCommits = async () => {
+    const sinceISO = new Date(
+      Date.now() - 7 * 24 * 60 * 60 * 1000
+    ).toISOString();
     const ALL_COMMITS_BY_REPO = (await Promise.all(
-      selectedRepos.map((name) => handleFetchCommits(name))
+      selectedRepos.map((name) => handleFetchCommits(name, sinceISO))
     )) as { commits: ICommitData[]; repoName: string }[];
-
-    console.log(ALL_COMMITS_BY_REPO);
 
     const REPO_SHA: { commit_sha: string[]; repoName: string }[] = [];
 
@@ -155,7 +157,7 @@ export default function Home() {
         };
       });
 
-      const INSIGHTS = await generateInsights(PAYLOADS);
+      const INSIGHTS = await generateInsights(PAYLOADS, sinceISO);
 
       if (INSIGHTS) {
         SetSummary(INSIGHTS.summary);
@@ -164,11 +166,11 @@ export default function Home() {
     }
   };
 
-  async function generateInsights(sections: IRepoSection[]) {
+  async function generateInsights(sections: IRepoSection[], sinceISO: string) {
     const res = await fetch("/api/generate-insights", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sections }),
+      body: JSON.stringify({ sections, sinceISO }),
     });
     return res.json();
   }
@@ -332,6 +334,8 @@ export default function Home() {
               Fetch Commits!
             </button>
           )}
+          <br />
+          <button>Show Summaries!</button>
           <div>
             <button
               onClick={() => {

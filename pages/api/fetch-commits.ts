@@ -16,19 +16,21 @@ export default async function handler(
   }
 
   const token = authHeader.split(" ")[1];
-  const { fullRepoName } = req.body;
+  const { fullRepoName, sinceISO } = req.body;
 
   if (!fullRepoName) {
     return res.status(400).json({ error: "Missing full repo name." });
   }
 
-  try {
-    const oneMonthAgo = new Date(
-      Date.now() - 30 * 24 * 60 * 60 * 1000
-    ).toISOString();
+  if (!sinceISO) {
+    return res
+      .status(400)
+      .json({ error: "Missing start date for commit range." });
+  }
 
+  try {
     const commitRes = await fetch(
-      `https://api.github.com/repos/${fullRepoName}/commits?since=${oneMonthAgo}`,
+      `https://api.github.com/repos/${fullRepoName}/commits?since=${sinceISO}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
