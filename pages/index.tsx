@@ -2,6 +2,7 @@ import { ICommitData } from "@/models/ICommitData";
 import { isInteresting, sanitizePatch } from "@/utils/functions";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { useState } from "react";
+import InsightsPage from "./insights";
 
 export interface IFileData {
   sha: string;
@@ -335,7 +336,7 @@ export default function Home() {
             </button>
           )}
           <br />
-          <button>Show Summaries!</button>
+          <InsightsPage />
           <div>
             <button
               onClick={() => {
