@@ -35,16 +35,7 @@ export default function InsightsPage() {
 
   useEffect(() => {
     (async () => {
-      try {
-        setLoadingList(true);
-        const res = await fetch("/api/summaries");
-        const data = await res.json();
-        setList(data.items ?? []);
-        // auto-select latest
-        if ((data.items ?? []).length > 0) setSelectedId(data.items[0].id);
-      } finally {
-        setLoadingList(false);
-      }
+      getInsights();
     })();
   }, []);
 
@@ -58,6 +49,7 @@ export default function InsightsPage() {
         setDetail(row);
       } finally {
         setLoadingDetail(false);
+        setDetail(null);
       }
     })();
   }, [selectedId]);
@@ -65,6 +57,22 @@ export default function InsightsPage() {
   function copy(text: string) {
     navigator.clipboard.writeText(text).catch(() => {});
   }
+
+  const getInsights = async () => {
+    try {
+      setLoadingList(true);
+      const res = await fetch("/api/summaries");
+      const data = await res.json();
+      setList(data.items ?? []);
+      if ((data.items ?? []).length > 0) setSelectedId(data.items[0].id);
+    } finally {
+      setLoadingList(false);
+    }
+  };
+
+  const deleteInsight = async (insightId: string): Promise<void> => {
+    await fetch(`/api/summary/${insightId}`, { method: "DELETE" });
+  };
 
   return (
     <main
@@ -90,35 +98,61 @@ export default function InsightsPage() {
               const isActive = item.id === selectedId;
               return (
                 <li key={item.id} style={{ marginBottom: 8 }}>
-                  <button
-                    onClick={() => setSelectedId(item.id)}
+                  <div
                     style={{
+                      border: "1px solid #e5e7eb",
+                      background: isActive ? "#f1f5f9" : "white",
                       width: "100%",
                       textAlign: "left",
                       padding: "8px 10px",
                       borderRadius: 6,
-                      border: "1px solid #e5e7eb",
-                      background: isActive ? "#f1f5f9" : "white",
-                      cursor: "pointer",
                     }}
                   >
                     <div
-                      style={{ fontWeight: 600, fontSize: 14, color: "black" }}
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 14,
+                        color: "black",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        cursor: "pointer",
+                      }}
                     >
-                      {dt.toLocaleString()}
-                    </div>
-                    <div style={{ fontSize: 12, color: "#475569" }}>
-                      Repos: {item.repos}
-                    </div>
-                    <div style={{ fontSize: 12, color: "#64748b" }}>
-                      Since: {item.sinceISO?.slice(0, 10)} • Model: {item.model}
-                    </div>
-                    {item.costUSD != null && (
-                      <div style={{ fontSize: 12, color: "#64748b" }}>
-                        Cost: ${item.costUSD.toFixed(6)}
+                      <div onClick={() => setSelectedId(item.id)}>
+                        {dt.toLocaleString()}
                       </div>
-                    )}
-                  </button>
+                      <div
+                        style={{ color: "#ff6b6b", fontWeight: "lighter" }}
+                        onClick={() => {
+                          deleteInsight(item.id).then(() => {
+                            getInsights();
+                          });
+                        }}
+                      >
+                        Delete
+                      </div>
+                    </div>
+                    <div
+                      onClick={() => setSelectedId(item.id)}
+                      style={{
+                        textAlign: "left",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <div style={{ fontSize: 12, color: "#475569" }}>
+                        Repos: {item.repos}
+                      </div>
+                      <div style={{ fontSize: 12, color: "#64748b" }}>
+                        Since: {item.sinceISO?.slice(0, 10)} • Model:{" "}
+                        {item.model}
+                      </div>
+                      {item.costUSD != null && (
+                        <div style={{ fontSize: 12, color: "#64748b" }}>
+                          Cost: ${item.costUSD.toFixed(6)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </li>
               );
             })}
