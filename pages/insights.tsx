@@ -25,7 +25,11 @@ type SummaryRow = {
   costUSD?: number | null;
 };
 
-export default function InsightsPage() {
+interface InsightsPageProps {
+  newInsightsLoaded: boolean;
+}
+
+export default function InsightsPage({ newInsightsLoaded }: InsightsPageProps) {
   const [list, setList] = useState<SummaryListItem[]>([]);
   const [loadingList, setLoadingList] = useState(true);
 
@@ -40,6 +44,10 @@ export default function InsightsPage() {
   }, []);
 
   useEffect(() => {
+    if (newInsightsLoaded) getInsights();
+  }, [newInsightsLoaded]);
+
+  useEffect(() => {
     if (!selectedId) return;
     (async () => {
       try {
@@ -49,7 +57,6 @@ export default function InsightsPage() {
         setDetail(row);
       } finally {
         setLoadingDetail(false);
-        setDetail(null);
       }
     })();
   }, [selectedId]);

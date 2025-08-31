@@ -48,6 +48,8 @@ export default function Home() {
   const [repoNames, setRepoNames] = useState<string[]>([]);
   const [selectedRepos, setSelectedRepos] = useState<string[]>([]);
   const [loadingRepos, setLoadingRepos] = useState(false);
+  const [loadingInsights, setLoadingInsights] = useState(false);
+  const [newInsightsLoaded, setNewInsightsLoaded] = useState(false);
   const [summary, SetSummary] = useState("");
 
   const handleFetchRepos = async () => {
@@ -114,6 +116,8 @@ export default function Home() {
   };
 
   const fetchCommits = async () => {
+    setLoadingInsights(true);
+
     const sinceISO = new Date(
       Date.now() - 7 * 24 * 60 * 60 * 1000
     ).toISOString();
@@ -156,15 +160,18 @@ export default function Home() {
           repo: commitContainer.repoName,
           payload: buildLLMPayload(commitContainer),
         };
-      });
+      }).filter((commitData) => commitData.payload.length > 0);
 
       const INSIGHTS = await generateInsights(PAYLOADS, sinceISO);
 
       if (INSIGHTS) {
         SetSummary(INSIGHTS.summary);
         saveInsights(INSIGHTS);
+        setNewInsightsLoaded(true);
       }
     }
+
+    setLoadingInsights(false);
   };
 
   async function generateInsights(sections: IRepoSection[], sinceISO: string) {
@@ -335,8 +342,34 @@ export default function Home() {
               Fetch Commits!
             </button>
           )}
+          {loadingInsights && (
+            <svg
+              width={16}
+              height={16}
+              viewBox="0 0 24 24"
+              className="animate-spin"
+              aria-hidden="true"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+                className="opacity-25"
+                fill="none"
+              />
+              <path
+                d="M22 12a10 10 0 0 1-10 10"
+                stroke="currentColor"
+                strokeWidth="4"
+                className="opacity-75"
+                fill="none"
+              />
+            </svg>
+          )}
           <br />
-          <InsightsPage />
+          <InsightsPage newInsightsLoaded={newInsightsLoaded} />
           <div>
             <button
               onClick={() => {

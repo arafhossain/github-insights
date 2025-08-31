@@ -8,7 +8,9 @@ export default async function handler(req:NextApiRequest, res: NextApiResponse) 
         return res.status(400).json({error: "No sections provided"});
     }
 
-    const prompt = buildPrompt(sections);
+  const REPOS = sections.map((section) => section.repo.includes("/") ? section.repo.split("/")[1] : section.repo);
+    
+  const prompt = buildPrompt(sections);
 
   const resp = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -42,7 +44,7 @@ return res.status(200).json({
   usage,
   costUSD,
   model,
-  repos: req.body?.repos ?? [],
+  repos: REPOS ?? [],
   sinceISO: sinceISO ?? null,
 });
 

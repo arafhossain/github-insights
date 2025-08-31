@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const row = await prisma.summary.create({
     data: {
       userId: userId ?? null,
-      repos: repos.join(","),
+      repos: repos.join(", "),
       sinceISO,
       model,
       content: summary,
