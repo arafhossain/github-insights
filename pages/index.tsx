@@ -1,8 +1,10 @@
 import { ICommitData } from "@/models/ICommitData";
 import { isInteresting, sanitizePatch } from "@/utils/functions";
 import { signIn, signOut, useSession } from "next-auth/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import InsightsPage from "./insights";
+import { useRepos } from "@/hooks/useRepos";
+import { IRepo } from "@/models/IRepo";
 
 export interface IFileData {
   sha: string;
@@ -45,27 +47,26 @@ export default function Home() {
   const session = sessionHook?.data;
 
   const [fetchedRepoNames, setFetchedRepoNames] = useState(false);
-  const [repoNames, setRepoNames] = useState<string[]>([]);
+  // const [repos, setRepos] = useState<IRepo[]>([]);
   const [selectedRepos, setSelectedRepos] = useState<string[]>([]);
   const [loadingRepos, setLoadingRepos] = useState(false);
   const [loadingInsights, setLoadingInsights] = useState(false);
   const [newInsightsLoaded, setNewInsightsLoaded] = useState(false);
   const [summary, SetSummary] = useState("");
+  const { reposResponse, loading, refresh, getCachedRepos } = useRepos(
+    session?.accessToken
+  );
 
   const handleFetchRepos = async () => {
     setLoadingRepos(true);
+    await refresh();
 
     try {
-      const res = await fetch("/api/fetch-repos", {
-        headers: {
-          Authorization: `Bearer ${session?.accessToken}`,
-        },
-      });
-
-      const data = await res.json();
-
-      if (data && Array.isArray(data.repos)) {
-        setRepoNames(data.repos.slice());
+      if (
+        reposResponse &&
+        Array.isArray(reposResponse.repos) &&
+        reposResponse.repos.length > 0
+      ) {
         setFetchedRepoNames(true);
       }
     } catch (err) {
@@ -256,76 +257,81 @@ export default function Home() {
               onClick={() => {
                 handleFetchRepos();
               }}
-              disabled={fetchedRepoNames}
             >
-              Fetch repo names
+              {reposResponse &&
+              Array.isArray(reposResponse.repos) &&
+              reposResponse.repos.length > 0
+                ? "Refresh repo names"
+                : "Fetch repo names"}
             </button>
           </div>
           {loadingRepos && <div>Loading...</div>}
-          {repoNames.length > 0 && (
-            <div style={{ maxWidth: "400px", marginTop: "1rem" }}>
-              <label htmlFor="repo-select" style={{ fontWeight: "bold" }}>
-                Select up to 3 repositories:
-              </label>
-              <select
-                id="repo-select"
-                onChange={handleSelect}
-                value=""
-                style={{
-                  display: "block",
-                  width: "100%",
-                  padding: "8px",
-                  marginTop: "8px",
-                  marginBottom: "8px",
-                }}
-              >
-                <option value="" disabled>
-                  -- Choose a repo --
-                </option>
-                {repoNames.map((repo) => (
-                  <option
-                    key={repo}
-                    value={repo}
-                    disabled={selectedRepos.includes(repo)}
-                  >
-                    {repo && repo.includes("/")
-                      ? repo.slice(repo.indexOf("/") + 1)
-                      : repo}
+          {reposResponse &&
+            Array.isArray(reposResponse.repos) &&
+            reposResponse.repos.length > 0 && (
+              <div style={{ maxWidth: "400px", marginTop: "1rem" }}>
+                <label htmlFor="repo-select" style={{ fontWeight: "bold" }}>
+                  Select up to 3 repositories:
+                </label>
+                <select
+                  id="repo-select"
+                  onChange={handleSelect}
+                  value=""
+                  style={{
+                    display: "block",
+                    width: "100%",
+                    padding: "8px",
+                    marginTop: "8px",
+                    marginBottom: "8px",
+                  }}
+                >
+                  <option value="" disabled>
+                    -- Choose a repo --
                   </option>
-                ))}
-              </select>
-
-              {selectedRepos.length >= 3 && (
-                <p style={{ color: "red", fontSize: "0.9rem" }}>
-                  Maximum of 3 repositories selected.
-                </p>
-              )}
-
-              {selectedRepos.length > 0 && (
-                <ul style={{ paddingLeft: "1rem", marginTop: "8px" }}>
-                  {selectedRepos.map((repo) => (
-                    <li key={repo} style={{ marginBottom: "4px" }}>
+                  {reposResponse?.repos.map((repo) => (
+                    <option
+                      key={repo}
+                      value={repo}
+                      disabled={selectedRepos.includes(repo)}
+                    >
                       {repo && repo.includes("/")
                         ? repo.slice(repo.indexOf("/") + 1)
-                        : repo}{" "}
-                      <button
-                        onClick={() => handleRemove(repo)}
-                        style={{
-                          backgroundColor: "transparent",
-                          color: "royalBlue",
-                          border: "none",
-                          cursor: "pointer",
-                          marginLeft: "6px",
-                        }}
-                      >
-                        ✕ Remove
-                      </button>
-                    </li>
+                        : repo}
+                    </option>
                   ))}
-                </ul>
-              )}
-            </div>
-          )}
+                </select>
+
+                {selectedRepos.length >= 3 && (
+                  <p style={{ color: "red", fontSize: "0.9rem" }}>
+                    Maximum of 3 repositories selected.
+                  </p>
+                )}
+
+                {selectedRepos.length > 0 && (
+                  <ul style={{ paddingLeft: "1rem", marginTop: "8px" }}>
+                    {selectedRepos.map((repo) => (
+                      <li key={repo} style={{ marginBottom: "4px" }}>
+                        {repo && repo.includes("/")
+                          ? repo.slice(repo.indexOf("/") + 1)
+                          : repo}{" "}
+                        <button
+                          onClick={() => handleRemove(repo)}
+                          style={{
+                            backgroundColor: "transparent",
+                            color: "royalBlue",
+                            border: "none",
+                            cursor: "pointer",
+                            marginLeft: "6px",
+                          }}
+                        >
+                          ✕ Remove
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
 
           {summary && summary !== "" && (
             <div className="whitespace-pre-wrap font-mono text-sm leading-6">

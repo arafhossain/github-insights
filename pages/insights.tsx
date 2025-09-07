@@ -204,6 +204,7 @@ export default function InsightsPage({ newInsightsLoaded }: InsightsPageProps) {
                   border: "1px solid #e5e7eb",
                   background: "#f8fafc",
                   textDecoration: "none",
+                  color: "black",
                 }}
               >
                 Download .txt
