@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import InsightsPage from "./insights";
 import { useRepos } from "@/hooks/useRepos";
 import { IRepo } from "@/models/IRepo";
+import Image from "next/image";
 
 export interface IFileData {
   sha: string;
@@ -243,11 +244,28 @@ export default function Home() {
     <main>
       {!session ? (
         <button
+          className="
+            inline-flex items-center gap-2
+            px-6 py-3 rounded-xl
+            text-white font-medium
+            bg-[linear-gradient(180deg,#9a0f2a_0%,#7b0c22_100%)]
+            ring-1 ring-[#e54a66]/30
+            hover:brightness-110 active:brightness-95
+            transition
+            tracking-wide
+            font-medium"
+          style={{ margin: "20px" }}
           onClick={() => {
             signIn("github");
           }}
         >
-          Login with Github
+          <Image
+            src="/assets/githubLogo.png"
+            alt="GitHub logo"
+            width={20}
+            height={20}
+          />
+          Login with GitHub
         </button>
       ) : (
         <>
