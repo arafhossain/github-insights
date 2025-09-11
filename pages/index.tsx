@@ -47,6 +47,7 @@ export default function Home() {
   const sessionHook = useSession();
   const session = sessionHook?.data;
 
+  const [authenticating, setAuthenticating] = useState(false);
   const [fetchedRepoNames, setFetchedRepoNames] = useState(false);
   // const [repos, setRepos] = useState<IRepo[]>([]);
   const [selectedRepos, setSelectedRepos] = useState<string[]>([]);
@@ -57,6 +58,10 @@ export default function Home() {
   const { reposResponse, loading, refresh, getCachedRepos } = useRepos(
     session?.accessToken
   );
+
+  useEffect(() => {
+    setAuthenticating(false);
+  }, []);
 
   const handleFetchRepos = async () => {
     setLoadingRepos(true);
@@ -241,10 +246,11 @@ export default function Home() {
   };
 
   return (
-    <main>
+    <div>
       {!session ? (
-        <button
-          className="
+        <div className="h-screen grid place-items-center">
+          <button
+            className="
             inline-flex items-center gap-2
             px-6 py-3 rounded-xl
             text-white font-medium
@@ -253,22 +259,55 @@ export default function Home() {
             hover:brightness-110 active:brightness-95
             transition
             tracking-wide
+            cursor-pointer
             font-medium"
-          style={{ margin: "20px" }}
-          onClick={() => {
-            signIn("github");
-          }}
-        >
-          <Image
-            src="/assets/githubLogo.png"
-            alt="GitHub logo"
-            width={20}
-            height={20}
-          />
-          Login with GitHub
-        </button>
+            style={{ margin: "20px" }}
+            onClick={() => {
+              signIn("github");
+              setAuthenticating(true);
+            }}
+          >
+            {authenticating ? (
+              <>
+                <svg
+                  className="animate-spin h-5 w-5"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    className="opacity-25"
+                    fill="none"
+                  />
+                  <path
+                    d="M22 12a10 10 0 0 1-10 10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    className="opacity-75"
+                    fill="none"
+                  />
+                </svg>
+                Redirecting…{" "}
+              </>
+            ) : (
+              <>
+                <Image
+                  src="/assets/githubLogo.png"
+                  alt="GitHub logo"
+                  width={20}
+                  height={20}
+                />
+                Login with GitHub
+              </>
+            )}
+          </button>
+        </div>
       ) : (
-        <>
+        <main>
           <p>Signed in as {session.user?.email}</p>
           <div>
             <button
@@ -403,8 +442,8 @@ export default function Home() {
               Sign out
             </button>
           </div>
-        </>
+        </main>
       )}
-    </main>
+    </div>
   );
 }
