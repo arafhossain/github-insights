@@ -82,15 +82,8 @@ export default function InsightsPage({ newInsightsLoaded }: InsightsPageProps) {
   };
 
   return (
-    <main
-      style={{
-        display: "grid",
-        gridTemplateColumns: "320px 1fr",
-        gap: "1rem",
-        padding: 16,
-      }}
-    >
-      <aside style={{ borderRight: "1px solid #eee", paddingRight: 16 }}>
+    <div style={{ display: "flex", flexWrap: "wrap" }}>
+      <div style={{ width: "30%", padding: "10px 10px 10px 15px" }}>
         <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>
           Summaries
         </h2>
@@ -165,9 +158,8 @@ export default function InsightsPage({ newInsightsLoaded }: InsightsPageProps) {
             })}
           </ul>
         )}
-      </aside>
-
-      <section>
+      </div>
+      <div style={{ width: "70%", padding: "10px 15px 10px 10px" }}>
         <div
           style={{
             display: "flex",
@@ -239,7 +231,7 @@ export default function InsightsPage({ newInsightsLoaded }: InsightsPageProps) {
             </div>
           </div>
         )}
-      </section>
-    </main>
+      </div>
+    </div>
   );
 }

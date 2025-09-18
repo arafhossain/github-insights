@@ -6,6 +6,7 @@ import InsightsPage from "./insights";
 import { useRepos } from "@/hooks/useRepos";
 import { IRepo } from "@/models/IRepo";
 import Image from "next/image";
+import ControlBar from "./controlbar";
 
 export interface IFileData {
   sha: string;
@@ -55,32 +56,10 @@ export default function Home() {
   const [loadingInsights, setLoadingInsights] = useState(false);
   const [newInsightsLoaded, setNewInsightsLoaded] = useState(false);
   const [summary, SetSummary] = useState("");
-  const { reposResponse, loading, refresh, getCachedRepos } = useRepos(
-    session?.accessToken
-  );
 
   useEffect(() => {
     setAuthenticating(false);
   }, []);
-
-  const handleFetchRepos = async () => {
-    setLoadingRepos(true);
-    await refresh();
-
-    try {
-      if (
-        reposResponse &&
-        Array.isArray(reposResponse.repos) &&
-        reposResponse.repos.length > 0
-      ) {
-        setFetchedRepoNames(true);
-      }
-    } catch (err) {
-      console.log("Error: ", err);
-    }
-
-    setLoadingRepos(false);
-  };
 
   const handleFetchCommits = async (repoName: string, sinceISO: string) => {
     try {
@@ -122,14 +101,14 @@ export default function Home() {
     }
   };
 
-  const fetchCommits = async () => {
+  const fetchCommits = async (repos: string[], pastNumDays: number) => {
     setLoadingInsights(true);
 
     const sinceISO = new Date(
-      Date.now() - 7 * 24 * 60 * 60 * 1000
+      Date.now() - pastNumDays * 24 * 60 * 60 * 1000
     ).toISOString();
     const ALL_COMMITS_BY_REPO = (await Promise.all(
-      selectedRepos.map((name) => handleFetchCommits(name, sinceISO))
+      repos.map((name) => handleFetchCommits(name, sinceISO))
     )) as { commits: ICommitData[]; repoName: string }[];
 
     const REPO_SHA: { commit_sha: string[]; repoName: string }[] = [];
@@ -169,7 +148,7 @@ export default function Home() {
         };
       }).filter((commitData) => commitData.payload.length > 0);
 
-      const INSIGHTS = await generateInsights(PAYLOADS, sinceISO);
+      const INSIGHTS = await generateInsights(PAYLOADS, sinceISO, pastNumDays);
 
       if (INSIGHTS) {
         SetSummary(INSIGHTS.summary);
@@ -181,11 +160,15 @@ export default function Home() {
     setLoadingInsights(false);
   };
 
-  async function generateInsights(sections: IRepoSection[], sinceISO: string) {
+  async function generateInsights(
+    sections: IRepoSection[],
+    sinceISO: string,
+    pastNumDays: number
+  ) {
     const res = await fetch("/api/generate-insights", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sections, sinceISO }),
+      body: JSON.stringify({ sections, sinceISO, pastNumDays }),
     });
     return res.json();
   }
@@ -232,18 +215,6 @@ export default function Home() {
 
     return out;
   }
-
-  const handleSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selected = e.target.value;
-    if (!selectedRepos.includes(selected) && selectedRepos.length < 3) {
-      const updated = [...selectedRepos, selected];
-      setSelectedRepos(updated);
-    }
-  };
-
-  const handleRemove = (repo: string) => {
-    setSelectedRepos(selectedRepos.filter((r) => r !== repo));
-  };
 
   return (
     <div>
@@ -308,102 +279,47 @@ export default function Home() {
         </div>
       ) : (
         <main>
-          <p>Signed in as {session.user?.email}</p>
+          {/* <p>Signed in as {session.user?.email}</p> */}
+          <header
+            className="flex justify-end p-4"
+            style={{ backgroundColor: "#260c11" }}
+          >
+            <p className="text-sm text-gray-400">
+              Signed in as{" "}
+              <span className="text-[#e54a66] font-semibold">
+                {session.user?.email}
+              </span>
+            </p>
+          </header>
           <div>
-            <button
+            {/* <button
               onClick={() => {
-                handleFetchRepos();
+                // handleFetchRepos();
               }}
+              className="
+              inline-flex items-center gap-2
+              px-6 py-3 rounded-xl
+              text-white font-medium
+              bg-[linear-gradient(180deg,#9a0f2a_0%,#7b0c22_100%)]
+              hover:brightness-110 active:brightness-95
+              transition
+              cursor-pointer
+              font-medium"
             >
               {reposResponse &&
               Array.isArray(reposResponse.repos) &&
               reposResponse.repos.length > 0
                 ? "Refresh repo names"
                 : "Fetch repo names"}
-            </button>
+            </button> */}
           </div>
           {loadingRepos && <div>Loading...</div>}
-          {reposResponse &&
-            Array.isArray(reposResponse.repos) &&
-            reposResponse.repos.length > 0 && (
-              <div style={{ maxWidth: "400px", marginTop: "1rem" }}>
-                <label htmlFor="repo-select" style={{ fontWeight: "bold" }}>
-                  Select up to 3 repositories:
-                </label>
-                <select
-                  id="repo-select"
-                  onChange={handleSelect}
-                  value=""
-                  style={{
-                    display: "block",
-                    width: "100%",
-                    padding: "8px",
-                    marginTop: "8px",
-                    marginBottom: "8px",
-                  }}
-                >
-                  <option value="" disabled>
-                    -- Choose a repo --
-                  </option>
-                  {reposResponse?.repos.map((repo) => (
-                    <option
-                      key={repo}
-                      value={repo}
-                      disabled={selectedRepos.includes(repo)}
-                    >
-                      {repo && repo.includes("/")
-                        ? repo.slice(repo.indexOf("/") + 1)
-                        : repo}
-                    </option>
-                  ))}
-                </select>
-
-                {selectedRepos.length >= 3 && (
-                  <p style={{ color: "red", fontSize: "0.9rem" }}>
-                    Maximum of 3 repositories selected.
-                  </p>
-                )}
-
-                {selectedRepos.length > 0 && (
-                  <ul style={{ paddingLeft: "1rem", marginTop: "8px" }}>
-                    {selectedRepos.map((repo) => (
-                      <li key={repo} style={{ marginBottom: "4px" }}>
-                        {repo && repo.includes("/")
-                          ? repo.slice(repo.indexOf("/") + 1)
-                          : repo}{" "}
-                        <button
-                          onClick={() => handleRemove(repo)}
-                          style={{
-                            backgroundColor: "transparent",
-                            color: "royalBlue",
-                            border: "none",
-                            cursor: "pointer",
-                            marginLeft: "6px",
-                          }}
-                        >
-                          ✕ Remove
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
+          <ControlBar onGenerate={fetchCommits} />
 
           {summary && summary !== "" && (
             <div className="whitespace-pre-wrap font-mono text-sm leading-6">
               {summary}
             </div>
-          )}
-
-          {selectedRepos.length > 0 && (
-            <button
-              onClick={() => {
-                fetchCommits();
-              }}
-            >
-              Fetch Commits!
-            </button>
           )}
           {loadingInsights && (
             <svg
@@ -435,6 +351,17 @@ export default function Home() {
           <InsightsPage newInsightsLoaded={newInsightsLoaded} />
           <div>
             <button
+              className="
+              inline-flex items-center gap-2
+              px-6 py-3 rounded-xl
+              text-white font-medium
+              bg-[linear-gradient(180deg,#9a0f2a_0%,#7b0c22_100%)]
+              ring-1 ring-[#e54a66]/30
+              hover:brightness-110 active:brightness-95
+              transition
+              tracking-wide
+              cursor-pointer
+              font-medium"
               onClick={() => {
                 signOut();
               }}

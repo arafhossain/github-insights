@@ -3,15 +3,15 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(req:NextApiRequest, res: NextApiResponse) {
     const {sections} = req.body as {sections: {repo:string; payload: any[]}[]};
-    const {sinceISO} = req.body;
+    const {sinceISO, pastNumDays} = req.body;
     if(!Array.isArray(sections) || sections.length === 0) {
         return res.status(400).json({error: "No sections provided"});
     }
 
   const REPOS = sections.map((section) => section.repo.includes("/") ? section.repo.split("/")[1] : section.repo);
     
-  const prompt = buildPrompt(sections);
-
+  const prompt = buildPrompt(sections, pastNumDays);
+  
   const resp = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {

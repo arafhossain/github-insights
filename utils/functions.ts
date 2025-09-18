@@ -55,7 +55,10 @@ export function sanitizePatch(patch?: string, maxChars = 4000) {
     : patch.slice(0, maxChars) + "\n...[truncated]";
 }
 
-export function buildPrompt(repos: IRepoSection[]): string {
+export function buildPrompt(
+  repos: IRepoSection[],
+  pastNumDays: number
+): string {
   const repoBlocks = repos.map(({ repo, payload }) => {
     const commits = payload
       .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
@@ -84,13 +87,14 @@ export function buildPrompt(repos: IRepoSection[]): string {
   });
 
   return [
-    "You are a senior engineer creating a weekly development report.",
+    "You are a senior engineer creating a monthly development report.",
     "Be concise, technical, and theme-focused. Avoid file-by-file narration unless notable.",
     "",
     "Tasks:",
-    "1) Summarize the week in 3–6 sentences (themes, rationale, impact).",
+    `1) Summarize the past ${pastNumDays} days in 3–6 sentences (themes, rationale, impact).`,
     "2) Provide 2–3 resume-ready bullets (action + outcome).",
     "3) List notable technical topics (e.g., OAuth, NextAuth, SSR, tests, DX).",
+    "4) Perform the above tasks for each distinct repository identified.",
     "",
     repoBlocks.join("\n\n====\n\n"),
   ].join("\n");
