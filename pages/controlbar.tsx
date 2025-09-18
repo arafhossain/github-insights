@@ -4,8 +4,10 @@ import { useRepos } from "@/hooks/useRepos";
 
 export default function ControlBar({
   onGenerate,
+  loadingInsights,
 }: {
   onGenerate: (repos: string[], pastNumDays: number) => void;
+  loadingInsights: boolean;
 }) {
   const { data: session } = useSession();
   const token = (session as any)?.accessToken as string | undefined;
@@ -31,7 +33,7 @@ export default function ControlBar({
     <div className="mx-auto max-w-6xl px-4">
       <div className="flex flex-wrap items-center justify-between gap-3 py-4">
         {/* Left group */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <div className="text-sm text-gray-300">
             Select up to 3 repositories{" "}
             <span className="text-gray-500">({selected.length}/3)</span>
@@ -130,8 +132,36 @@ export default function ControlBar({
                   ? "bg-[linear-gradient(180deg,#9a0f2a_0%,#7b0c22_100%)] hover:brightness-110 active:brightness-95"
                   : "bg-white/10 text-gray-400 cursor-not-allowed"
               }`}
+            style={{ minWidth: "100px", justifyItems: "center" }}
           >
-            Generate
+            {loadingInsights ? (
+              <svg
+                width={24}
+                height={24}
+                viewBox="0 0 24 24"
+                className="animate-spin"
+                aria-hidden="true"
+              >
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  className="opacity-25"
+                  fill="none"
+                />
+                <path
+                  d="M22 12a10 10 0 0 1-10 10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  className="opacity-75"
+                  fill="none"
+                />
+              </svg>
+            ) : (
+              <span>Generate</span>
+            )}
           </button>
         </div>
       </div>
