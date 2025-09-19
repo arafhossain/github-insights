@@ -49,13 +49,8 @@ export default function Home() {
   const session = sessionHook?.data;
 
   const [authenticating, setAuthenticating] = useState(false);
-  const [fetchedRepoNames, setFetchedRepoNames] = useState(false);
-  // const [repos, setRepos] = useState<IRepo[]>([]);
-  const [selectedRepos, setSelectedRepos] = useState<string[]>([]);
-  const [loadingRepos, setLoadingRepos] = useState(false);
   const [loadingInsights, setLoadingInsights] = useState(false);
   const [newInsightsLoaded, setNewInsightsLoaded] = useState(false);
-  const [summary, SetSummary] = useState("");
 
   useEffect(() => {
     setAuthenticating(false);
@@ -151,7 +146,6 @@ export default function Home() {
       const INSIGHTS = await generateInsights(PAYLOADS, sinceISO, pastNumDays);
 
       if (INSIGHTS) {
-        SetSummary(INSIGHTS.summary);
         saveInsights(INSIGHTS);
         setNewInsightsLoaded(true);
       }
@@ -279,7 +273,6 @@ export default function Home() {
         </div>
       ) : (
         <main>
-          {/* <p>Signed in as {session.user?.email}</p> */}
           <header
             className="flex justify-end p-4"
             style={{ backgroundColor: "#260c11" }}
@@ -291,39 +284,10 @@ export default function Home() {
               </span>
             </p>
           </header>
-          <div>
-            {/* <button
-              onClick={() => {
-                // handleFetchRepos();
-              }}
-              className="
-              inline-flex items-center gap-2
-              px-6 py-3 rounded-xl
-              text-white font-medium
-              bg-[linear-gradient(180deg,#9a0f2a_0%,#7b0c22_100%)]
-              hover:brightness-110 active:brightness-95
-              transition
-              cursor-pointer
-              font-medium"
-            >
-              {reposResponse &&
-              Array.isArray(reposResponse.repos) &&
-              reposResponse.repos.length > 0
-                ? "Refresh repo names"
-                : "Fetch repo names"}
-            </button> */}
-          </div>
-          {loadingRepos && <div>Loading...</div>}
           <ControlBar
             onGenerate={fetchCommits}
             loadingInsights={loadingInsights}
           />
-
-          {summary && summary !== "" && (
-            <div className="whitespace-pre-wrap font-mono text-sm leading-6">
-              {summary}
-            </div>
-          )}
           <br />
           <InsightsPage newInsightsLoaded={newInsightsLoaded} />
           <div>
