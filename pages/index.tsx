@@ -215,17 +215,7 @@ export default function Home() {
       {!session ? (
         <div className="h-screen grid place-items-center">
           <button
-            className="
-            inline-flex items-center gap-2
-            px-6 py-3 rounded-xl
-            text-white font-medium
-            bg-[linear-gradient(180deg,#9a0f2a_0%,#7b0c22_100%)]
-            ring-1 ring-[#e54a66]/30
-            hover:brightness-110 active:brightness-95
-            transition
-            tracking-wide
-            cursor-pointer
-            font-medium"
+            className="btn btn-primary"
             style={{ margin: "20px" }}
             onClick={() => {
               signIn("github");
@@ -292,17 +282,7 @@ export default function Home() {
           <InsightsPage newInsightsLoaded={newInsightsLoaded} />
           <div>
             <button
-              className="
-              inline-flex items-center gap-2
-              px-6 py-3 rounded-xl
-              text-white font-medium
-              bg-[linear-gradient(180deg,#9a0f2a_0%,#7b0c22_100%)]
-              ring-1 ring-[#e54a66]/30
-              hover:brightness-110 active:brightness-95
-              transition
-              tracking-wide
-              cursor-pointer
-              font-medium"
+              className="btn btn-primary"
               onClick={() => {
                 signOut();
               }}

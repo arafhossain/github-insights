@@ -24,3 +24,15 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.btn {
+  @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition cursor-pointer;
+}
+
+.btn-primary {
+  @apply text-white
+  bg-[linear-gradient(180deg,#9a0f2a_0%,#7b0c22_100%)]
+  ring-1 ring-[#e54a66]/30
+  hover:brightness-110
+  active:brightness-95;
+}

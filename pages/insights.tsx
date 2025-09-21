@@ -82,8 +82,8 @@ export default function InsightsPage({ newInsightsLoaded }: InsightsPageProps) {
   };
 
   return (
-    <div style={{ display: "flex", flexWrap: "wrap" }}>
-      <div style={{ width: "30%", padding: "10px 10px 10px 15px" }}>
+    <div className="flex flex-col md:flex-row">
+      <div className="md:w-1/3 w-full p-3 md:pl-6">
         <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>
           Summaries
         </h2>
@@ -159,7 +159,7 @@ export default function InsightsPage({ newInsightsLoaded }: InsightsPageProps) {
           </ul>
         )}
       </div>
-      <div style={{ width: "70%", padding: "10px 15px 10px 10px" }}>
+      <div className="md:w-2/3 w-full p-3 md:pl-2">
         <div
           style={{
             display: "flex",
@@ -180,6 +180,7 @@ export default function InsightsPage({ newInsightsLoaded }: InsightsPageProps) {
                 cursor: "pointer",
                 color: "black",
               }}
+              className="btn"
               disabled={!detail}
             >
               Copy
@@ -190,6 +191,7 @@ export default function InsightsPage({ newInsightsLoaded }: InsightsPageProps) {
                   detail.content
                 )}`}
                 download={`weekly-summary-${detail.id}.txt`}
+                className="btn"
                 style={{
                   padding: "6px 10px",
                   borderRadius: 6,
