@@ -282,7 +282,7 @@ export default function Home() {
           <InsightsPage newInsightsLoaded={newInsightsLoaded} />
           <div>
             <button
-              className="btn btn-primary"
+              className="btn btn-secondary"
               onClick={() => {
                 signOut();
               }}

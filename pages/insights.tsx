@@ -83,83 +83,85 @@ export default function InsightsPage({ newInsightsLoaded }: InsightsPageProps) {
 
   return (
     <div className="flex flex-col md:flex-row">
-      <div className="md:w-1/3 w-full p-3 md:pl-6">
-        <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>
+      <div className="md:w-1/3 w-full p-3 md:pl-6 md:max-h-[70vh]">
+        <h2 className="text-lg font-semibold mb-2 text-white pl-1">
           Summaries
         </h2>
-        {loadingList ? (
-          <div>Loading…</div>
-        ) : list.length === 0 ? (
-          <div>No summaries yet.</div>
-        ) : (
-          <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-            {list.map((item) => {
-              const dt = new Date(item.createdAt);
-              const isActive = item.id === selectedId;
-              return (
-                <li key={item.id} style={{ marginBottom: 8 }}>
-                  <div
-                    style={{
-                      border: "1px solid #e5e7eb",
-                      background: isActive ? "#f1f5f9" : "white",
-                      width: "100%",
-                      textAlign: "left",
-                      padding: "8px 10px",
-                      borderRadius: 6,
-                    }}
-                  >
+        <div className="border-2 border-white/20 rounded-lg max-h-[70vh] overflow-y-auto p-2">
+          {loadingList ? (
+            <div>Loading…</div>
+          ) : list.length === 0 ? (
+            <div>No summaries yet.</div>
+          ) : (
+            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+              {list.map((item) => {
+                const dt = new Date(item.createdAt);
+                const isActive = item.id === selectedId;
+                return (
+                  <li key={item.id} style={{ marginBottom: 8 }}>
                     <div
                       style={{
-                        fontWeight: 600,
-                        fontSize: 14,
-                        color: "black",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        cursor: "pointer",
+                        border: "1px solid #e5e7eb",
+                        background: isActive ? "#f1f5f9" : "white",
+                        width: "100%",
+                        textAlign: "left",
+                        padding: "8px 10px",
+                        borderRadius: 6,
                       }}
                     >
-                      <div onClick={() => setSelectedId(item.id)}>
-                        {dt.toLocaleString()}
-                      </div>
                       <div
-                        style={{ color: "#ff6b6b", fontWeight: "lighter" }}
-                        onClick={() => {
-                          deleteInsight(item.id).then(() => {
-                            getInsights();
-                          });
+                        style={{
+                          fontWeight: 600,
+                          fontSize: 14,
+                          color: "black",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          cursor: "pointer",
                         }}
                       >
-                        Delete
-                      </div>
-                    </div>
-                    <div
-                      onClick={() => setSelectedId(item.id)}
-                      style={{
-                        textAlign: "left",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <div style={{ fontSize: 12, color: "#475569" }}>
-                        Repos: {item.repos}
-                      </div>
-                      <div style={{ fontSize: 12, color: "#64748b" }}>
-                        Since: {item.sinceISO?.slice(0, 10)} • Model:{" "}
-                        {item.model}
-                      </div>
-                      {item.costUSD != null && (
-                        <div style={{ fontSize: 12, color: "#64748b" }}>
-                          Cost: ${item.costUSD.toFixed(6)}
+                        <div onClick={() => setSelectedId(item.id)}>
+                          {dt.toLocaleString()}
                         </div>
-                      )}
+                        <div
+                          style={{ color: "#ff6b6b", fontWeight: "lighter" }}
+                          onClick={() => {
+                            deleteInsight(item.id).then(() => {
+                              getInsights();
+                            });
+                          }}
+                        >
+                          Delete
+                        </div>
+                      </div>
+                      <div
+                        onClick={() => setSelectedId(item.id)}
+                        style={{
+                          textAlign: "left",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <div style={{ fontSize: 12, color: "#475569" }}>
+                          Repos: {item.repos}
+                        </div>
+                        <div style={{ fontSize: 12, color: "#64748b" }}>
+                          Since: {item.sinceISO?.slice(0, 10)} • Model:{" "}
+                          {item.model}
+                        </div>
+                        {item.costUSD != null && (
+                          <div style={{ fontSize: 12, color: "#64748b" }}>
+                            Cost: ${item.costUSD.toFixed(6)}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
       </div>
-      <div className="md:w-2/3 w-full p-3 md:pl-2">
+      <div className="md:w-2/3 w-full p-3 md:pl-2 ">
         <div
           style={{
             display: "flex",
@@ -172,15 +174,7 @@ export default function InsightsPage({ newInsightsLoaded }: InsightsPageProps) {
           <div style={{ display: "flex", gap: 8 }}>
             <button
               onClick={() => detail?.content && copy(detail.content)}
-              style={{
-                padding: "6px 10px",
-                borderRadius: 6,
-                border: "1px solid #e5e7eb",
-                background: "#f8fafc",
-                cursor: "pointer",
-                color: "black",
-              }}
-              className="btn"
+              className="btn btn-utility"
               disabled={!detail}
             >
               Copy
@@ -191,15 +185,7 @@ export default function InsightsPage({ newInsightsLoaded }: InsightsPageProps) {
                   detail.content
                 )}`}
                 download={`weekly-summary-${detail.id}.txt`}
-                className="btn"
-                style={{
-                  padding: "6px 10px",
-                  borderRadius: 6,
-                  border: "1px solid #e5e7eb",
-                  background: "#f8fafc",
-                  textDecoration: "none",
-                  color: "black",
-                }}
+                className="btn btn-utility"
               >
                 Download .txt
               </a>

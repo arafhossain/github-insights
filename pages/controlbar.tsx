@@ -93,7 +93,7 @@ export default function ControlBar({
           {/* Refresh (manual) */}
           <button
             onClick={refresh}
-            className="rounded-lg border border-[#b21e35]/70 bg-[#b21e35]/15 px-3 py-2 text-[#ffdfe6] hover:bg-[#b21e35]/25 transition"
+            className="btn btn-secondary"
             disabled={loading}
           >
             {loading ? "Refreshing…" : "Refresh"}
@@ -112,26 +112,14 @@ export default function ControlBar({
             <option value={30}>Last 30 days</option>
           </select>
 
-          {/* <select
-            value={model}
-            onChange={(e) => setModel(e.target.value)}
-            className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-gray-200"
-          >
-            <option value="gpt-4o-mini">gpt-4o-mini</option>
-            <option value="gpt-4o">gpt-4o</option>
-          </select> */}
-
           <button
             onClick={() => {
               onGenerate(selected, sinceDays);
             }}
             disabled={!canGenerate}
-            className={`rounded-xl px-4 py-2 font-medium text-white ring-1 ring-[#e54a66]/30 transition
-              ${
-                canGenerate
-                  ? "bg-[linear-gradient(180deg,#9a0f2a_0%,#7b0c22_100%)] hover:brightness-110 active:brightness-95"
-                  : "bg-white/10 text-gray-400 cursor-not-allowed"
-              }`}
+            className={`${
+              canGenerate ? "btn btn-primary" : "btn btn-disabled"
+            }`}
             style={{ minWidth: "100px", justifyItems: "center" }}
           >
             {loadingInsights ? (
