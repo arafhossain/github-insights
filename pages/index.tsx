@@ -264,15 +264,38 @@ export default function Home() {
       ) : (
         <main>
           <header
-            className="flex justify-end p-4"
+            className="flex items-center justify-end border-b border-white/10 px-4 py-3 mb-3"
             style={{ backgroundColor: "#260c11" }}
           >
-            <p className="text-sm text-gray-400">
-              Signed in as{" "}
-              <span className="text-[#e54a66] font-semibold">
-                {session.user?.email}
-              </span>
-            </p>
+            <div className="flex items-center space-x-3">
+              <p className="text-sm text-gray-400">
+                Signed in as{" "}
+                <span className="text-[#e54a66] font-semibold">
+                  {session.user?.email}
+                </span>
+              </p>
+              <span className="h-4 border-l-2 border-white/20"></span>{" "}
+              <button
+                onClick={() => signOut()}
+                className="text-gray-400 hover:text-white transition cursor-pointer"
+                title="Sign out"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-5 h-5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6A2.25 2.25 0 005.25 5.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"
+                  />
+                </svg>
+              </button>
+            </div>
           </header>
           <ControlBar
             onGenerate={fetchCommits}
@@ -280,16 +303,6 @@ export default function Home() {
           />
           <br />
           <InsightsPage newInsightsLoaded={newInsightsLoaded} />
-          <div>
-            <button
-              className="btn btn-secondary"
-              onClick={() => {
-                signOut();
-              }}
-            >
-              Sign out
-            </button>
-          </div>
         </main>
       )}
     </div>
