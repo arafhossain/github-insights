@@ -1,13 +1,17 @@
 import { useSession } from "next-auth/react";
 import { useState, useMemo } from "react";
 import { useRepos } from "@/hooks/useRepos";
+import Spinner from "./spinner";
+import { SummaryListItem } from "./insights";
 
 export default function ControlBar({
   onGenerate,
   loadingInsights,
+  list,
 }: {
   onGenerate: (repos: string[], pastNumDays: number) => void;
   loadingInsights: boolean;
+  list: SummaryListItem[];
 }) {
   const { data: session } = useSession();
   const token = (session as any)?.accessToken as string | undefined;
@@ -32,13 +36,25 @@ export default function ControlBar({
   return (
     <div className="mx-auto max-w-6xl px-4">
       <div className="flex flex-wrap items-center justify-between gap-3 py-4">
-        {/* Left group */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="text-sm text-gray-300">
-            Select up to 3 repositories{" "}
-            <span className="text-gray-500">({selected.length}/3)</span>
-          </div>
+        <div
+          className={`flex items-center gap-3 flex-wrap ${
+            list.length === 0 ? "items-start" : null
+          }`}
+        >
+          <div className="flex flex-col gap-1">
+            <div className="text-sm text-gray-300">
+              Select up to 3 repositories{" "}
+              <span className="text-gray-500">({selected.length}/3)</span>
+            </div>
 
+            {list.length === 0 && (
+              <p className="text-xs text-gray-400">
+                Select repos and click{" "}
+                <span className="text-white font-medium">Generate</span> to
+                create your first summary.
+              </p>
+            )}
+          </div>
           <div className="relative">
             <details className="group">
               <summary className="min-w-[240px] cursor-pointer rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-left text-gray-200">
@@ -89,14 +105,13 @@ export default function ControlBar({
               </div>
             </details>
           </div>
-
           {/* Refresh (manual) */}
           <button
             onClick={refresh}
             className="btn btn-secondary"
             disabled={loading}
           >
-            {loading ? "Refreshing…" : "Refresh"}
+            {loading ? <Spinner /> : "Refresh"}
           </button>
         </div>
 
@@ -122,34 +137,7 @@ export default function ControlBar({
             }`}
             style={{ minWidth: "100px", justifyItems: "center" }}
           >
-            {loadingInsights ? (
-              <svg
-                width={24}
-                height={24}
-                viewBox="0 0 24 24"
-                className="animate-spin"
-                aria-hidden="true"
-              >
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                  className="opacity-25"
-                  fill="none"
-                />
-                <path
-                  d="M22 12a10 10 0 0 1-10 10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                  className="opacity-75"
-                  fill="none"
-                />
-              </svg>
-            ) : (
-              <span>Generate</span>
-            )}
+            {loadingInsights ? <Spinner /> : <span>Generate</span>}
           </button>
         </div>
       </div>

@@ -2,11 +2,12 @@ import { ICommitData } from "@/models/ICommitData";
 import { isInteresting, sanitizePatch } from "@/utils/functions";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
-import InsightsPage from "./insights";
+import InsightsPage, { SummaryListItem } from "./insights";
 import { useRepos } from "@/hooks/useRepos";
 import { IRepo } from "@/models/IRepo";
 import Image from "next/image";
 import ControlBar from "./controlbar";
+import Spinner from "./spinner";
 
 export interface IFileData {
   sha: string;
@@ -51,10 +52,18 @@ export default function Home() {
   const [authenticating, setAuthenticating] = useState(false);
   const [loadingInsights, setLoadingInsights] = useState(false);
   const [newInsightsLoaded, setNewInsightsLoaded] = useState(false);
+  const [list, setList] = useState<SummaryListItem[]>([]);
+  const [loadingList, setLoadingList] = useState(true);
 
   useEffect(() => {
     setAuthenticating(false);
   }, []);
+
+  useEffect(() => {
+    if (!session) return;
+    console.log("Getting insights");
+    getInsights();
+  }, [session, newInsightsLoaded]);
 
   const handleFetchCommits = async (repoName: string, sinceISO: string) => {
     try {
@@ -146,8 +155,9 @@ export default function Home() {
       const INSIGHTS = await generateInsights(PAYLOADS, sinceISO, pastNumDays);
 
       if (INSIGHTS) {
-        saveInsights(INSIGHTS);
-        setNewInsightsLoaded(true);
+        saveInsights(INSIGHTS).then(() => {
+          setNewInsightsLoaded(true);
+        });
       }
     }
 
@@ -168,12 +178,25 @@ export default function Home() {
   }
 
   async function saveInsights(insights: any) {
-    await fetch("/api/save-summary", {
+    return await fetch("/api/save-summary", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(insights),
     }).then((res) => console.log("Saved insights!"));
   }
+
+  const getInsights = async () => {
+    try {
+      setLoadingList(true);
+      const res = await fetch("/api/summaries");
+      const data = await res.json();
+      console.log(data);
+
+      setList(data.items ?? []);
+    } finally {
+      setLoadingList(false);
+    }
+  };
 
   function buildLLMPayload(commitContainer: ICommitContainer): CommitForLLM[] {
     const out: CommitForLLM[] = [];
@@ -224,28 +247,7 @@ export default function Home() {
           >
             {authenticating ? (
               <>
-                <svg
-                  className="animate-spin h-5 w-5"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    className="opacity-25"
-                    fill="none"
-                  />
-                  <path
-                    d="M22 12a10 10 0 0 1-10 10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    className="opacity-75"
-                    fill="none"
-                  />
-                </svg>
+                <Spinner />
                 Redirecting…{" "}
               </>
             ) : (
@@ -300,9 +302,10 @@ export default function Home() {
           <ControlBar
             onGenerate={fetchCommits}
             loadingInsights={loadingInsights}
+            list={list}
           />
           <br />
-          <InsightsPage newInsightsLoaded={newInsightsLoaded} />
+          <InsightsPage list={list} />
         </main>
       )}
     </div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-type SummaryListItem = {
+export type SummaryListItem = {
   id: string;
   createdAt: string;
   repos: string;
@@ -26,26 +26,19 @@ type SummaryRow = {
 };
 
 interface InsightsPageProps {
-  newInsightsLoaded: boolean;
+  list: SummaryListItem[];
 }
 
-export default function InsightsPage({ newInsightsLoaded }: InsightsPageProps) {
-  const [list, setList] = useState<SummaryListItem[]>([]);
-  const [loadingList, setLoadingList] = useState(true);
-
+export default function InsightsPage({ list }: InsightsPageProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<SummaryRow | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
   useEffect(() => {
-    (async () => {
-      getInsights();
-    })();
-  }, []);
+    if (!list.length) return;
 
-  useEffect(() => {
-    if (newInsightsLoaded) getInsights();
-  }, [newInsightsLoaded]);
+    setSelectedId(list[0].id);
+  }, [list]);
 
   useEffect(() => {
     if (!selectedId) return;
@@ -65,18 +58,6 @@ export default function InsightsPage({ newInsightsLoaded }: InsightsPageProps) {
     navigator.clipboard.writeText(text).catch(() => {});
   }
 
-  const getInsights = async () => {
-    try {
-      setLoadingList(true);
-      const res = await fetch("/api/summaries");
-      const data = await res.json();
-      setList(data.items ?? []);
-      if ((data.items ?? []).length > 0) setSelectedId(data.items[0].id);
-    } finally {
-      setLoadingList(false);
-    }
-  };
-
   const deleteInsight = async (insightId: string): Promise<void> => {
     await fetch(`/api/summary/${insightId}`, { method: "DELETE" });
   };
@@ -87,18 +68,28 @@ export default function InsightsPage({ newInsightsLoaded }: InsightsPageProps) {
         <h2 className="text-lg font-semibold mb-2 text-white pl-1">
           Summaries
         </h2>
-        <div className="border-2 border-white/20 rounded-lg max-h-[70vh] overflow-y-auto p-2">
-          {loadingList ? (
-            <div>Loading…</div>
-          ) : list.length === 0 ? (
-            <div>No summaries yet.</div>
+        <div
+          className="border-2 border-white/20 rounded-lg max-h-[70vh] overflow-y-auto p-2"
+          // style={{ justifyItems: "center" }}
+        >
+          {list.length === 0 ? (
+            <div className="rounded-md p-3 text-gray-400 text-sm text-center">
+              No summaries yet.
+            </div>
           ) : (
             <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-              {list.map((item) => {
+              {list.map((item, itemIdx) => {
                 const dt = new Date(item.createdAt);
                 const isActive = item.id === selectedId;
                 return (
-                  <li key={item.id} style={{ marginBottom: 8 }}>
+                  <li
+                    key={item.id}
+                    style={
+                      list.length > 0 && itemIdx < list.length - 1
+                        ? { marginBottom: "8px" }
+                        : {}
+                    }
+                  >
                     <div
                       style={{
                         border: "1px solid #e5e7eb",
@@ -126,7 +117,7 @@ export default function InsightsPage({ newInsightsLoaded }: InsightsPageProps) {
                           style={{ color: "#ff6b6b", fontWeight: "lighter" }}
                           onClick={() => {
                             deleteInsight(item.id).then(() => {
-                              getInsights();
+                              // getInsights();
                             });
                           }}
                         >
@@ -171,15 +162,15 @@ export default function InsightsPage({ newInsightsLoaded }: InsightsPageProps) {
           }}
         >
           <h2 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>Summary</h2>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button
-              onClick={() => detail?.content && copy(detail.content)}
-              className="btn btn-utility"
-              disabled={!detail}
-            >
-              Copy
-            </button>
-            {detail?.content && (
+          {detail?.content && (
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={() => detail?.content && copy(detail.content)}
+                className="btn btn-utility"
+                disabled={!detail}
+              >
+                Copy
+              </button>
               <a
                 href={`data:text/plain;charset=utf-8,${encodeURIComponent(
                   detail.content
@@ -189,14 +180,18 @@ export default function InsightsPage({ newInsightsLoaded }: InsightsPageProps) {
               >
                 Download .txt
               </a>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {loadingDetail ? (
           <div>Loading…</div>
         ) : !detail ? (
-          <div>Select a summary</div>
+          <div className="text-gray-400 text-sm italic">
+            Select repos and click{" "}
+            <span className="text-white font-medium">Generate</span> to see your
+            first report.
+          </div>
         ) : (
           <div>
             <div style={{ fontSize: 13, color: "#64748b", marginBottom: 12 }}>
