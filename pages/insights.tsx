@@ -36,9 +36,12 @@ export default function InsightsPage({ list, getInsights }: InsightsPageProps) {
   const [loadingDetail, setLoadingDetail] = useState(false);
 
   useEffect(() => {
-    if (!list.length) return;
-
-    setSelectedId(list[0].id);
+    if (!list.length) {
+      setSelectedId(null);
+      setDetail(null);
+    } else {
+      setSelectedId(list[0].id);
+    }
   }, [list]);
 
   useEffect(() => {

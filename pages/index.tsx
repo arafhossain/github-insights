@@ -60,7 +60,13 @@ export default function Home() {
   useEffect(() => {
     if (!session) return;
     getInsights();
-  }, [session, newInsightsLoaded]);
+  }, [session]);
+
+  useEffect(() => {
+    if (session && newInsightsLoaded) {
+      getInsights();
+    }
+  }, [newInsightsLoaded]);
 
   const handleFetchCommits = async (repoName: string, sinceISO: string) => {
     try {
@@ -192,6 +198,7 @@ export default function Home() {
       setList(data.items ?? []);
     } finally {
       setLoadingList(false);
+      setNewInsightsLoaded(false);
     }
   };
 
