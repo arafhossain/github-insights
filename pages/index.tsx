@@ -3,8 +3,6 @@ import { isInteresting, sanitizePatch } from "@/utils/functions";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import InsightsPage, { SummaryListItem } from "./insights";
-import { useRepos } from "@/hooks/useRepos";
-import { IRepo } from "@/models/IRepo";
 import Image from "next/image";
 import ControlBar from "./controlbar";
 import Spinner from "./spinner";
@@ -61,7 +59,6 @@ export default function Home() {
 
   useEffect(() => {
     if (!session) return;
-    console.log("Getting insights");
     getInsights();
   }, [session, newInsightsLoaded]);
 
@@ -305,7 +302,12 @@ export default function Home() {
             list={list}
           />
           <br />
-          <InsightsPage list={list} />
+          <InsightsPage
+            list={list}
+            getInsights={() => {
+              getInsights();
+            }}
+          />
         </main>
       )}
     </div>

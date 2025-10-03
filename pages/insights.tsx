@@ -27,9 +27,10 @@ type SummaryRow = {
 
 interface InsightsPageProps {
   list: SummaryListItem[];
+  getInsights: () => void;
 }
 
-export default function InsightsPage({ list }: InsightsPageProps) {
+export default function InsightsPage({ list, getInsights }: InsightsPageProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<SummaryRow | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
@@ -58,6 +59,17 @@ export default function InsightsPage({ list }: InsightsPageProps) {
     navigator.clipboard.writeText(text).catch(() => {});
   }
 
+  function formatDate(dateString: string) {
+    const d = new Date(dateString);
+    return d.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  }
+
   const deleteInsight = async (insightId: string): Promise<void> => {
     await fetch(`/api/summary/${insightId}`, { method: "DELETE" });
   };
@@ -79,7 +91,7 @@ export default function InsightsPage({ list }: InsightsPageProps) {
           ) : (
             <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
               {list.map((item, itemIdx) => {
-                const dt = new Date(item.createdAt);
+                const displayDate = formatDate(item.createdAt);
                 const isActive = item.id === selectedId;
                 return (
                   <li
@@ -111,17 +123,30 @@ export default function InsightsPage({ list }: InsightsPageProps) {
                         }}
                       >
                         <div onClick={() => setSelectedId(item.id)}>
-                          {dt.toLocaleString()}
+                          {displayDate}
                         </div>
                         <div
                           style={{ color: "#ff6b6b", fontWeight: "lighter" }}
                           onClick={() => {
                             deleteInsight(item.id).then(() => {
-                              // getInsights();
+                              getInsights();
                             });
                           }}
                         >
-                          Delete
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={2}
+                            stroke="currentColor"
+                            className="w-5 h-5"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
                         </div>
                       </div>
                       <div
@@ -195,8 +220,9 @@ export default function InsightsPage({ list }: InsightsPageProps) {
         ) : (
           <div>
             <div style={{ fontSize: 13, color: "#64748b", marginBottom: 12 }}>
-              Repos: {detail.repos} • Since: {detail.sinceISO?.slice(0, 10)} •
-              Model: {detail.model}
+              Repos: {detail.repos} • Since:{" "}
+              {formatDate(detail.sinceISO?.slice(0, 10))} • Model:{" "}
+              {detail.model}
               {typeof detail.costUSD === "number" && (
                 <> • Cost: ${detail.costUSD.toFixed(6)}</>
               )}
