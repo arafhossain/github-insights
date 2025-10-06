@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Renderer from "./renderer";
 
 export type SummaryListItem = {
   id: string;
@@ -233,13 +234,12 @@ export default function InsightsPage({ list, getInsights }: InsightsPageProps) {
 
             <div
               style={{
-                whiteSpace: "pre-wrap",
                 fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
                 fontSize: 14,
-                lineHeight: 1.6,
+                // lineHeight: 1.6,
               }}
             >
-              {detail.content}
+              <Renderer content={detail?.content || ""} />
             </div>
           </div>
         )}

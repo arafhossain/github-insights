@@ -56,3 +56,62 @@ body {
 .summaryList {
   @apply max-h-[70vh] overflow-y-auto pr-2;
 }
+
+.prose-tight {
+  max-width: none;
+  color: #e5e7eb;
+  font-family: system-ui, sans-serif;
+}
+
+.prose-tight h1,
+.prose-tight h2,
+.prose-tight h3 {
+  color: #f3f4f6;
+  font-weight: 600;
+  margin-top: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.prose-tight p {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+  line-height: 1.4;
+  color: #e5e7eb;
+}
+
+.prose-tight strong {
+  color: #f3f4f6;
+  font-weight: 600;
+}
+
+.prose-tight code {
+  background-color: rgba(0, 0, 0, 0.3);
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.25rem;
+  color: #f3f4f6;
+  font-size: 0.875rem;
+}
+
+.prose-tight ul,
+.prose-tight ol {
+  margin-top: 0 !important;
+  margin-bottom: 0.25rem !important;
+  padding-left: 1.25rem !important;
+  list-style-type: disc;
+  color: #d1d5db;
+}
+
+.prose-tight li {
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1.35 !important;
+  color: #e5e7eb;
+}
+
+.prose-tight li + li {
+  margin-top: 0.15rem !important;
+}
+
+.prose-tight li p {
+  margin: 0 !important;
+}
