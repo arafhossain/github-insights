@@ -23,7 +23,6 @@ export default async function handler(
   );
 
   const repos = await reposRes.json();
-
-  const repoNames = repos.map((repo: any) => repo.full_name);
+  const repoNames = repos.map((repo: { full_name: string }) => repo.full_name);
   res.status(200).json({ repos: repoNames });
 }

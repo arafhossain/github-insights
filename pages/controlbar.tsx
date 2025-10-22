@@ -14,12 +14,14 @@ export default function ControlBar({
   list: SummaryListItem[];
 }) {
   const { data: session } = useSession();
-  const token = (session as any)?.accessToken as string | undefined;
+  const token = session?.accessToken as string | undefined;
 
   const { repos, loading, error, refresh } = useRepos(token);
   const [selected, setSelected] = useState<string[]>([]);
   const [sinceDays, setSinceDays] = useState(7);
   // const [model, setModel] = useState("gpt-4o-mini");
+  const [automateModalOpen, setAutomateModalOpen] = useState(false);
+  const [autoGenerate, setAutoGenerate] = useState(false);
 
   const canGenerate = selected.length >= 1 && selected.length <= 3 && !loading;
 
@@ -38,7 +40,7 @@ export default function ControlBar({
       <div className="flex flex-wrap items-center justify-between gap-3 py-4">
         <div
           className={`flex items-center gap-3 flex-wrap ${
-            list.length === 0 ? "items-start" : null
+            !list || list.length === 0 ? "items-start" : null
           }`}
         >
           <div className="flex flex-col gap-1">
@@ -47,13 +49,14 @@ export default function ControlBar({
               <span className="text-gray-500">({selected.length}/3)</span>
             </div>
 
-            {list.length === 0 && (
-              <p className="text-xs text-gray-400">
-                Select repos and click{" "}
-                <span className="text-white font-medium">Generate</span> to
-                create your first summary.
-              </p>
-            )}
+            {!list ||
+              (list.length === 0 && (
+                <p className="text-xs text-gray-400">
+                  Select repos and click{" "}
+                  <span className="text-white font-medium">Generate</span> to
+                  create your first summary.
+                </p>
+              ))}
           </div>
           <div className="relative">
             <details className="group">
@@ -139,8 +142,51 @@ export default function ControlBar({
           >
             {loadingInsights ? <Spinner /> : <span>Generate</span>}
           </button>
+          <button
+            onClick={() => {
+              setAutomateModalOpen(true);
+            }}
+            className="btn btn-secondary"
+          >
+            ⚙️ Automate
+          </button>
         </div>
       </div>
+      {automateModalOpen && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center">
+          <div className="bg-[#1a1a1a] rounded-lg p-6 w-[400px] text-gray-200">
+            <h2 className="text-lg font-semibold mb-3">
+              Automatic Weekly Summaries
+            </h2>
+            <p className="text-sm mb-4 text-gray-400">
+              When enabled, summaries for your selected repositories will run
+              every week automatically.
+            </p>
+
+            <label className="flex items-center gap-2 mb-4">
+              <input
+                type="checkbox"
+                checked={autoGenerate}
+                onChange={(e) => setAutoGenerate(e.target.checked)}
+                className="accent-[#b21e35]"
+              />
+              Enable weekly summaries
+            </label>
+
+            <div className="flex justify-end gap-2">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setAutomateModalOpen(false)}
+              >
+                Cancel
+              </button>
+              <button className="btn btn-primary" onClick={() => {}}>
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="border-b border-white/10" />
     </div>

@@ -1,11 +1,14 @@
 import { ICommitData } from "@/models/ICommitData";
-import { isInteresting, sanitizePatch } from "@/utils/functions";
+import { buildLLMPayload } from "@/utils/functions";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import InsightsPage, { SummaryListItem } from "./insights";
 import Image from "next/image";
 import ControlBar from "./controlbar";
 import Spinner from "./spinner";
+import { handleFetchCommits } from "@/utils/helpers";
+import { IShaContent } from "@/models/IShaContent";
+import { IInsight } from "@/models/IInsight";
 
 export interface IFileData {
   sha: string;
@@ -20,22 +23,22 @@ export interface IFileData {
   patch: string;
 }
 
-type CommitForLLM = {
+export type CommitForLLM = {
   sha: string;
   message: string;
   date: string;
   files: Array<{
     filename: string;
-    status: string; // "modified" | "added" | ...
+    status: string;
     additions: number;
     deletions: number;
-    patch?: string; // truncated
+    patch?: string;
   }>;
 };
 
-interface ICommitContainer {
+export interface ICommitContainer {
   repoName: string;
-  sha_content: any;
+  sha_content: IShaContent[];
 }
 
 export interface IRepoSection {
@@ -51,7 +54,7 @@ export default function Home() {
   const [loadingInsights, setLoadingInsights] = useState(false);
   const [newInsightsLoaded, setNewInsightsLoaded] = useState(false);
   const [list, setList] = useState<SummaryListItem[]>([]);
-  const [loadingList, setLoadingList] = useState(true);
+  // const [loadingList, setLoadingList] = useState(true);
 
   useEffect(() => {
     setAuthenticating(false);
@@ -66,29 +69,7 @@ export default function Home() {
     if (session && newInsightsLoaded) {
       getInsights();
     }
-  }, [newInsightsLoaded]);
-
-  const handleFetchCommits = async (repoName: string, sinceISO: string) => {
-    try {
-      const res = await fetch("/api/fetch-commits", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.accessToken}`,
-        },
-        body: JSON.stringify({
-          fullRepoName: repoName,
-          sinceISO,
-        }),
-      });
-
-      const data = await res.json();
-      data.repoName = repoName;
-      return data;
-    } catch (err) {
-      console.log("Error: ", err);
-    }
-  };
+  }, [newInsightsLoaded, session]);
 
   const fetchSHAContent = async (fullRepoName: string, sha: string) => {
     try {
@@ -115,7 +96,9 @@ export default function Home() {
       Date.now() - pastNumDays * 24 * 60 * 60 * 1000
     ).toISOString();
     const ALL_COMMITS_BY_REPO = (await Promise.all(
-      repos.map((name) => handleFetchCommits(name, sinceISO))
+      repos.map((name) =>
+        handleFetchCommits(name, sinceISO, session?.accessToken ?? "")
+      )
     )) as { commits: ICommitData[]; repoName: string }[];
 
     const REPO_SHA: { commit_sha: string[]; repoName: string }[] = [];
@@ -155,9 +138,13 @@ export default function Home() {
         };
       }).filter((commitData) => commitData.payload.length > 0);
 
-      const INSIGHTS = await generateInsights(PAYLOADS, sinceISO, pastNumDays);
+      const INSIGHTS: IInsight = await generateInsights(
+        PAYLOADS,
+        sinceISO,
+        pastNumDays
+      );
 
-      if (INSIGHTS) {
+      if (INSIGHTS && !INSIGHTS.error) {
         saveInsights(INSIGHTS).then(() => {
           setNewInsightsLoaded(true);
         });
@@ -180,62 +167,32 @@ export default function Home() {
     return res.json();
   }
 
-  async function saveInsights(insights: any) {
+  async function saveInsights(insights: IInsight) {
     return await fetch("/api/save-summary", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(insights),
-    }).then((res) => console.log("Saved insights!"));
+    })
+      .then(() => {
+        console.log("Saved insights!");
+      })
+      .catch((err) => {
+        console.error("Couldnt save insights: ", err);
+      });
   }
 
   const getInsights = async () => {
     try {
-      setLoadingList(true);
+      // setLoadingList(true);
       const res = await fetch("/api/summaries");
       const data = await res.json();
-      console.log(data);
 
       setList(data.items ?? []);
     } finally {
-      setLoadingList(false);
+      // setLoadingList(false);
       setNewInsightsLoaded(false);
     }
   };
-
-  function buildLLMPayload(commitContainer: ICommitContainer): CommitForLLM[] {
-    const out: CommitForLLM[] = [];
-
-    for (const commitDetails of commitContainer.sha_content ?? []) {
-      const files: CommitForLLM["files"] = [];
-
-      for (const f of commitDetails.files ?? []) {
-        const churn = (f.additions ?? 0) + (f.deletions ?? 0);
-
-        if (churn > 2000) continue;
-        // filter noisy / huge files
-        if (!isInteresting(f.filename, f.additions ?? 0, f.deletions ?? 0))
-          continue;
-
-        files.push({
-          filename: f.filename,
-          status: f.status,
-          additions: f.additions,
-          deletions: f.deletions,
-          patch: sanitizePatch(f.patch, 4000),
-        });
-      }
-      if (files.length === 0) continue;
-
-      out.push({
-        sha: commitDetails.sha,
-        message: commitDetails.commit?.message ?? "",
-        date: commitDetails.commit?.author?.date ?? "",
-        files,
-      });
-    }
-
-    return out;
-  }
 
   return (
     <div>

@@ -88,7 +88,7 @@ export default function InsightsPage({ list, getInsights }: InsightsPageProps) {
           className="border-2 border-white/20 rounded-lg max-h-[70vh] overflow-y-auto p-2"
           // style={{ justifyItems: "center" }}
         >
-          {list.length === 0 ? (
+          {!list || list.length === 0 ? (
             <div className="rounded-md p-3 text-gray-400 text-sm text-center">
               No summaries yet.
             </div>

@@ -1,8 +1,6 @@
 import React from "react";
 
-type Props = {};
-
-export default function Spinner({}: Props) {
+export default function Spinner() {
   return (
     <svg
       width={24}

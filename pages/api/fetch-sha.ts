@@ -1,4 +1,3 @@
-import { error } from "console";
 import { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(
@@ -6,8 +5,6 @@ export default async function handler(
   res: NextApiResponse
 ) {
   const { fullRepoName, sha } = req.query;
-
-  console.log(fullRepoName, sha);
 
   if (!fullRepoName || !sha) {
     return res.status(400).json({ error: "Missing required query params" });
@@ -41,7 +38,12 @@ export default async function handler(
     const shaData = await response.json();
 
     res.status(200).json(shaData);
-  } catch (err) {
-    return res.status(500).json({ error: "Internal Server Error" });
+  } catch (e) {
+    return res
+      .status(500)
+      .json({
+        error: "Internal Server Error ",
+        detail: e instanceof Error ? e.message : String(e),
+      });
   }
 }

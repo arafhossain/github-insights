@@ -1,4 +1,4 @@
-import { IRepoSection } from "@/pages";
+import { CommitForLLM, ICommitContainer, IRepoSection } from "@/pages";
 
 const NOISE_SUBSTRINGS = [
   "node_modules/",
@@ -98,4 +98,41 @@ export function buildPrompt(
     "",
     repoBlocks.join("\n\n====\n\n"),
   ].join("\n");
+}
+
+export function buildLLMPayload(
+  commitContainer: ICommitContainer
+): CommitForLLM[] {
+  const out: CommitForLLM[] = [];
+
+  for (const commitDetails of commitContainer.sha_content ?? []) {
+    const files: CommitForLLM["files"] = [];
+
+    for (const f of commitDetails.files ?? []) {
+      const churn = (f.additions ?? 0) + (f.deletions ?? 0);
+
+      if (churn > 2000) continue;
+      // filter noisy / huge files
+      if (!isInteresting(f.filename, f.additions ?? 0, f.deletions ?? 0))
+        continue;
+
+      files.push({
+        filename: f.filename,
+        status: f.status,
+        additions: f.additions,
+        deletions: f.deletions,
+        patch: sanitizePatch(f.patch, 4000),
+      });
+    }
+    if (files.length === 0) continue;
+
+    out.push({
+      sha: commitDetails.sha,
+      message: commitDetails.commit?.message ?? "",
+      date: commitDetails.commit?.author?.date?.toString() ?? "",
+      files,
+    });
+  }
+
+  return out;
 }

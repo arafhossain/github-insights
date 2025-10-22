@@ -7,11 +7,20 @@ generator client {
   provider = "prisma-client-js"
 }
 
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  summaries Summary[]
+  autoGenerate   Boolean   @default(false)
+  repos          Repo[]
+}
+
 model Summary {
   id        String   @id @default(cuid())
-  userId    String?
+  userId    String
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
   repos     String
-  sinceISO  String
+  since     DateTime
   model     String
   content   String
   promptTok Int?
@@ -21,4 +30,14 @@ model Summary {
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+}
+
+model Repo {
+  id        String   @id @default(cuid())
+  name      String
+  fullName  String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

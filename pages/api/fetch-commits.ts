@@ -1,4 +1,3 @@
-import { error } from "console";
 import { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(
@@ -48,7 +47,12 @@ export default async function handler(
     const commits = await commitRes.json();
 
     res.status(200).json({ commits });
-  } catch (err) {
-    return res.status(500).json({ error: "Internal Server Error" });
+  } catch (e) {
+    return res
+      .status(500)
+      .json({
+        error: "Internal Server Error",
+        detail: e instanceof Error ? e.message : String(e),
+      });
   }
 }
