@@ -1,8 +1,9 @@
-import NextAuth from "next-auth";
-import GithubProvider from "next-auth/providers/github";
-import { GithubProfile } from "next-auth/providers/github";
+import NextAuth, { type NextAuthOptions } from "next-auth";
+import GithubProvider, { type GithubProfile } from "next-auth/providers/github";
+import type { JWT } from "next-auth/jwt";
+import type { Account, Profile, User } from "next-auth";
 
-export default NextAuth({
+export const authOptions: NextAuthOptions = {
   providers: [
     GithubProvider({
       clientId: process.env.GITHUB_ID!,
@@ -10,14 +11,25 @@ export default NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, account, profile }) {
-      if (account && profile) {
+    async jwt({
+      token,
+      account,
+      profile,
+      user,
+    }: {
+      token: JWT;
+      account?: Account | null;
+      profile?: Profile | GithubProfile | null;
+      user?: User;
+    }) {
+      if (account && profile && "login" in profile) {
         const ghProfile = profile as GithubProfile;
         token.accessToken = account.access_token;
         token.username = ghProfile.login;
       }
       return token;
     },
+
     async session({ session, token }) {
       return {
         ...session,
@@ -26,4 +38,6 @@ export default NextAuth({
       };
     },
   },
-});
+};
+
+export default NextAuth(authOptions);
