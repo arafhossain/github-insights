@@ -3,6 +3,7 @@ import { useState, useMemo } from "react";
 import { useRepos } from "@/hooks/useRepos";
 import Spinner from "./spinner";
 import { SummaryListItem } from "./insights";
+import { fetchAutomateRepos, saveAutomateRepos } from "@/utils/helpers";
 
 export default function ControlBar({
   onGenerate,
@@ -18,21 +19,71 @@ export default function ControlBar({
 
   const { repos, loading, error, refresh } = useRepos(token);
   const [selected, setSelected] = useState<string[]>([]);
+  const [selectedAutomate, setSelectedAutomate] = useState<string[]>([]);
   const [sinceDays, setSinceDays] = useState(7);
-  // const [model, setModel] = useState("gpt-4o-mini");
   const [automateModalOpen, setAutomateModalOpen] = useState(false);
+  const [automateReposResponse, setAutoReposResponse] = useState<{
+    succeeded: boolean;
+    success: number;
+    failed: number;
+  } | null>(null);
   const [autoGenerate, setAutoGenerate] = useState(false);
+  const [savingSummaryAction, setSavingSummaryAction] = useState(false);
 
   const canGenerate = selected.length >= 1 && selected.length <= 3 && !loading;
 
   const options: string[] = useMemo(() => repos ?? [], [repos]);
 
-  const toggleSelect = (full: string) => {
-    setSelected((prev) => {
-      if (prev.includes(full)) return prev.filter((x) => x !== full);
-      if (prev.length >= 3) return prev; // cap at 3
-      return [...prev, full];
-    });
+  const toggleSelect = (full: string, isAutomate = false) => {
+    if (!isAutomate) {
+      setSelected((prev) => {
+        if (prev.includes(full)) return prev.filter((x) => x !== full);
+        if (prev.length >= 3) return prev; // cap at 3
+        return [...prev, full];
+      });
+    } else {
+      setSelectedAutomate((prev) => {
+        if (prev.includes(full)) return prev.filter((x) => x !== full);
+        if (prev.length >= 3) return prev; // cap at 3
+        return [...prev, full];
+      });
+    }
+  };
+
+  const openAutomateModal = async () => {
+    setAutomateModalOpen(true);
+    setSavingSummaryAction(true);
+    const existingRepos = await fetchAutomateRepos();
+    setSelectedAutomate(existingRepos);
+    setSavingSummaryAction(false);
+  };
+
+  const handleSaveAutomation = () => {
+    setSavingSummaryAction(true);
+
+    saveAutomateRepos(selectedAutomate)
+      .then((res) => {
+        if (res && res.success) {
+          setAutoReposResponse({
+            succeeded: true,
+            success: res.succeeded,
+            failed: res.failed,
+          });
+        } else {
+          setAutoReposResponse({ succeeded: false, success: 0, failed: 0 });
+        }
+      })
+      .catch((err) => {
+        console.error("Error: ", err);
+        setAutoReposResponse({
+          succeeded: false,
+          success: 0,
+          failed: 0,
+        });
+      })
+      .finally(() => {
+        setSavingSummaryAction(false);
+      });
   };
 
   return (
@@ -58,7 +109,7 @@ export default function ControlBar({
                 </p>
               ))}
           </div>
-          <div className="relative">
+          <div className="relative" style={{ zIndex: 1000 }}>
             <details className="group">
               <summary className="min-w-[240px] cursor-pointer rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-left text-gray-200">
                 {loading
@@ -144,7 +195,7 @@ export default function ControlBar({
           </button>
           <button
             onClick={() => {
-              setAutomateModalOpen(true);
+              openAutomateModal();
             }}
             className="btn btn-secondary"
           >
@@ -153,35 +204,145 @@ export default function ControlBar({
         </div>
       </div>
       {automateModalOpen && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center">
-          <div className="bg-[#1a1a1a] rounded-lg p-6 w-[400px] text-gray-200">
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center"
+          style={{ zIndex: 1000 }}
+        >
+          <div className="bg-[#1a1a1a] rounded-lg p-6 w-[420px] text-gray-200">
             <h2 className="text-lg font-semibold mb-3">
               Automatic Weekly Summaries
             </h2>
             <p className="text-sm mb-4 text-gray-400">
-              When enabled, summaries for your selected repositories will run
-              every week automatically.
+              Choose up to 3 repositories to summarize automatically each week.
             </p>
 
-            <label className="flex items-center gap-2 mb-4">
-              <input
-                type="checkbox"
-                checked={autoGenerate}
-                onChange={(e) => setAutoGenerate(e.target.checked)}
-                className="accent-[#b21e35]"
-              />
-              Enable weekly summaries
-            </label>
+            {savingSummaryAction && (
+              <div className="mb-4 flex items-center justify-center">
+                <Spinner />
+              </div>
+            )}
+
+            {!savingSummaryAction && (
+              <div className="mb-4">
+                <div className="relative" style={{ zIndex: 1000 }}>
+                  <details className="group">
+                    <summary className="min-w-[240px] cursor-pointer rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-left text-gray-200">
+                      {loading
+                        ? "Loading repos…"
+                        : selectedAutomate.length
+                        ? selectedAutomate
+                            .map((option) =>
+                              option.includes("/")
+                                ? option.substring(option.indexOf("/") + 1)
+                                : option
+                            )
+                            .join(", ")
+                        : "-- Choose repo --"}
+                    </summary>
+                    <div className="absolute z-10 mt-2 max-h-72 w-[320px] overflow-auto rounded-lg border border-white/10 bg-[#0f0f0f] p-2 shadow-lg">
+                      {error && (
+                        <div className="px-2 py-1 text-sm text-red-300">
+                          Error: {error}
+                        </div>
+                      )}
+                      {!repos && !loading && (
+                        <div className="px-2 py-1 text-sm text-gray-400">
+                          No repos
+                        </div>
+                      )}
+                      {options.map((option) => {
+                        const checked = selectedAutomate.includes(option);
+                        return (
+                          <label
+                            key={option}
+                            className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm text-gray-200 hover:bg-white/5"
+                          >
+                            <input
+                              type="checkbox"
+                              className="accent-[#b21e35]"
+                              checked={checked}
+                              onChange={() => toggleSelect(option, true)}
+                            />
+                            <span className="truncate">
+                              {option.includes("/")
+                                ? option.substring(option.indexOf("/") + 1)
+                                : option}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </details>
+                </div>
+
+                {automateReposResponse && (
+                  <div className="mt-3 border border-white/10 rounded-lg p-3 bg-black/30 text-sm">
+                    {automateReposResponse.succeeded &&
+                      automateReposResponse.failed === 0 && (
+                        <div className="flex items-center gap-2 text-green-400">
+                          <span>✅</span>
+                          <span>
+                            Successfully saved {automateReposResponse.success}{" "}
+                            repos for automation.
+                          </span>
+                        </div>
+                      )}
+
+                    {automateReposResponse.succeeded &&
+                      automateReposResponse.failed > 0 && (
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2 text-yellow-400">
+                            <span>⚠️</span>
+                            <span>
+                              Some repos failed to save —{" "}
+                              {automateReposResponse.success} succeeded,{" "}
+                              {automateReposResponse.failed} failed.
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-400 mt-1">
+                            You can retry saving them after checking your GitHub
+                            connection.
+                          </p>
+                        </div>
+                      )}
+
+                    {!automateReposResponse.succeeded && (
+                      <div className="flex items-center gap-2 text-red-400">
+                        <span>❌</span>
+                        <span>
+                          Failed to save selected repos. Please try again.
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="mt-3 flex justify-end">
+                      <button
+                        className="btn btn-secondary text-xs"
+                        onClick={() => setAutoReposResponse(null)}
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="flex justify-end gap-2">
               <button
                 className="btn btn-secondary"
-                onClick={() => setAutomateModalOpen(false)}
+                onClick={() => {
+                  setAutomateModalOpen(false);
+                  setAutoReposResponse(null);
+                }}
               >
                 Cancel
               </button>
-              <button className="btn btn-primary" onClick={() => {}}>
-                Save
+              <button
+                className="btn btn-primary"
+                onClick={handleSaveAutomation}
+              >
+                Save Automation
               </button>
             </div>
           </div>
