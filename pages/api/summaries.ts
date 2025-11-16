@@ -11,7 +11,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       orderBy: { createdAt: "desc" },
       take,
       select: {
-        id: true, createdAt: true, repos: true, sinceISO: true, content: true,
+        id: true, createdAt: true, repos: true, since: true, content: true,
         model: true, promptTok: true, compTok: true, totalTok: true, costUSD: true
       },
     });

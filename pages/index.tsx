@@ -148,6 +148,8 @@ export default function Home() {
         saveInsights(INSIGHTS).then(() => {
           setNewInsightsLoaded(true);
         });
+      } else {
+        console.error("No commits to parse!");
       }
     }
 
@@ -266,12 +268,32 @@ export default function Home() {
             list={list}
           />
           <br />
-          <InsightsPage
-            list={list}
-            getInsights={() => {
-              getInsights();
-            }}
-          />
+          {!list || list.length === 0 ? (
+            <div className="relative flex flex-col items-center justify-center h-[60vh] text-center">
+              <img
+                src="./assets/version-control.png"
+                alt="Background"
+                className="absolute inset-0 w-full h-full object-contain opacity-10 brightness-[2] invert-[0.4] contrast-[1.1] pointer-events-none"
+              />
+              <div className="z-10">
+                <h2 className="text-xl font-semibold text-gray-200 mb-2">
+                  No summaries yet
+                </h2>
+                <p className="text-gray-400 text-sm mb-4">
+                  Select up to 3 repositories and click{" "}
+                  <span className="text-[#e54a66] font-semibold">Generate</span>{" "}
+                  to create your first summary.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <InsightsPage
+              list={list}
+              getInsights={() => {
+                getInsights();
+              }}
+            />
+          )}
         </main>
       )}
     </div>

@@ -50,3 +50,35 @@ export async function getOrCreateUser(session:Session) {
     create: {email: session.user.email}
   });
 }
+
+export async function saveAutomateRepos(repos: string[]) {
+  return await fetch("/api/save-repos", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({selectedRepos: repos}),
+  })
+    .then(async(res) => {
+      const results = await res.json() as {
+        success: true,
+        succeeded: number,
+        failed: number,
+      };
+
+      return results;
+    })
+    .catch((err) => {
+      console.error("Save repos err: ", err);
+    });
+}
+
+export async function fetchAutomateRepos() {
+  try {
+    const res = await fetch("/api/fetch-automate-repos");
+    if (!res.ok) throw new Error("Failed to fetch automate repos");
+    const data = await res.json();
+    return data.repos || [];
+  } catch (err) {
+    console.error("fetchAutomateRepos error:", err);
+    return [];
+  }
+}

@@ -6,7 +6,7 @@ export default async function handler(req:NextApiRequest, res: NextApiResponse) 
     const {sections} = req.body as {sections: {repo:string; payload: CommitForLLM[]}[]};
     const {sinceISO, pastNumDays} = req.body;
     if(!Array.isArray(sections) || sections.length === 0) {
-        return res.status(400).json({error: "No sections provided"});
+        return res.status(400).json({error: "No commits provided."});
     }
 
   const REPOS = sections.map((section) => section.repo.includes("/") ? section.repo.split("/")[1] : section.repo);
