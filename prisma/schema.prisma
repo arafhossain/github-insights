@@ -10,12 +10,12 @@ generator client {
 model User {
   id        String    @id @default(cuid())
   email     String    @unique
-  summaries Summary[]
+  insights Insight[]
   autoGenerate   Boolean   @default(false)
   repos          Repo[]
 }
 
-model Summary {
+model Insight {
   id        String   @id @default(cuid())
   userId    String
   user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -33,11 +33,14 @@ model Summary {
 }
 
 model Repo {
-  id        String   @id @default(cuid())
-  name      String
-  fullName  String
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(cuid())
+  name       String
+  fullName   String
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  isActive   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([fullName, userId], name: "fullName_userId")
 }

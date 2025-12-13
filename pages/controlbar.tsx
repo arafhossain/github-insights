@@ -2,8 +2,9 @@ import { useSession } from "next-auth/react";
 import { useState, useMemo } from "react";
 import { useRepos } from "@/hooks/useRepos";
 import Spinner from "./spinner";
-import { SummaryListItem } from "./insights";
+import { InsightListItem } from "./insights";
 import { fetchAutomateRepos, saveAutomateRepos } from "@/utils/helpers";
+import { IInsight } from "@/models/IInsight";
 
 export default function ControlBar({
   onGenerate,
@@ -12,7 +13,7 @@ export default function ControlBar({
 }: {
   onGenerate: (repos: string[], pastNumDays: number) => void;
   loadingInsights: boolean;
-  list: SummaryListItem[];
+  list: IInsight[];
 }) {
   const { data: session } = useSession();
   const token = session?.accessToken as string | undefined;
@@ -28,7 +29,7 @@ export default function ControlBar({
     failed: number;
   } | null>(null);
   const [autoGenerate, setAutoGenerate] = useState(false);
-  const [savingSummaryAction, setSavingSummaryAction] = useState(false);
+  const [savingInsightAction, setSavingInsightAction] = useState(false);
 
   const canGenerate = selected.length >= 1 && selected.length <= 3 && !loading;
 
@@ -52,14 +53,14 @@ export default function ControlBar({
 
   const openAutomateModal = async () => {
     setAutomateModalOpen(true);
-    setSavingSummaryAction(true);
+    setSavingInsightAction(true);
     const existingRepos = await fetchAutomateRepos();
     setSelectedAutomate(existingRepos);
-    setSavingSummaryAction(false);
+    setSavingInsightAction(false);
   };
 
   const handleSaveAutomation = () => {
-    setSavingSummaryAction(true);
+    setSavingInsightAction(true);
 
     saveAutomateRepos(selectedAutomate)
       .then((res) => {
@@ -82,18 +83,14 @@ export default function ControlBar({
         });
       })
       .finally(() => {
-        setSavingSummaryAction(false);
+        setSavingInsightAction(false);
       });
   };
 
   return (
     <div className="mx-auto max-w-6xl px-4">
       <div className="flex flex-wrap items-center justify-between gap-3 py-4">
-        <div
-          className={`flex items-center gap-3 flex-wrap ${
-            !list || list.length === 0 ? "items-start" : null
-          }`}
-        >
+        <div className={`flex items-center gap-3 flex-wrap`}>
           <div className="flex flex-col gap-1">
             <div className="text-sm text-gray-300">
               Select up to 3 repositories{" "}
@@ -105,7 +102,7 @@ export default function ControlBar({
                 <p className="text-xs text-gray-400">
                   Select repos and click{" "}
                   <span className="text-white font-medium">Generate</span> to
-                  create your first summary.
+                  create your first insight.
                 </p>
               ))}
           </div>
@@ -216,13 +213,13 @@ export default function ControlBar({
               Choose up to 3 repositories to summarize automatically each week.
             </p>
 
-            {savingSummaryAction && (
+            {savingInsightAction && (
               <div className="mb-4 flex items-center justify-center">
                 <Spinner />
               </div>
             )}
 
-            {!savingSummaryAction && (
+            {!savingInsightAction && (
               <div className="mb-4">
                 <div className="relative" style={{ zIndex: 1000 }}>
                   <details className="group">

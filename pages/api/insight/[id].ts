@@ -10,11 +10,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     if(req.method === "GET") {
-      const row = await prisma.summary.findUnique({ where: { id } });
+      const row = await prisma.insight.findUnique({ where: { id } });
       if (!row) return res.status(404).json({ error: "Not found" });
       res.status(200).json(row);
     } else if (req.method === "DELETE") {
-      await prisma.summary.delete({where: {id}})
+      await prisma.insight.delete({where: {id}})
       res.status(200).json({ ok: true });
     }
   } catch (e) {

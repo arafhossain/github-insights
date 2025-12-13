@@ -2,13 +2,20 @@ import { ICommitData } from "@/models/ICommitData";
 import { buildLLMPayload } from "@/utils/functions";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
-import InsightsPage, { SummaryListItem } from "./insights";
+import InsightsPage from "./insights";
 import Image from "next/image";
 import ControlBar from "./controlbar";
 import Spinner from "./spinner";
-import { handleFetchCommits } from "@/utils/helpers";
+import {
+  fetchSHAContent,
+  generateInsights,
+  getInsights,
+  handleFetchCommits,
+  saveInsights,
+} from "@/utils/helpers";
 import { IShaContent } from "@/models/IShaContent";
-import { IInsight } from "@/models/IInsight";
+import { IInsight, IInsightResponse } from "@/models/IInsight";
+import toast from "react-hot-toast";
 
 export interface IFileData {
   sha: string;
@@ -53,8 +60,7 @@ export default function Home() {
   const [authenticating, setAuthenticating] = useState(false);
   const [loadingInsights, setLoadingInsights] = useState(false);
   const [newInsightsLoaded, setNewInsightsLoaded] = useState(false);
-  const [list, setList] = useState<SummaryListItem[]>([]);
-  // const [loadingList, setLoadingList] = useState(true);
+  const [list, setList] = useState<IInsight[]>([]);
 
   useEffect(() => {
     setAuthenticating(false);
@@ -62,31 +68,24 @@ export default function Home() {
 
   useEffect(() => {
     if (!session) return;
-    getInsights();
+    fetchAndSetInsights();
   }, [session]);
 
   useEffect(() => {
     if (session && newInsightsLoaded) {
-      getInsights();
+      fetchAndSetInsights();
     }
   }, [newInsightsLoaded, session]);
 
-  const fetchSHAContent = async (fullRepoName: string, sha: string) => {
-    try {
-      const res = await fetch(
-        `/api/fetch-sha?fullRepoName=${fullRepoName}&sha=${sha}`,
-        {
-          headers: {
-            Authorization: `Bearer ${session?.accessToken}`,
-          },
-        }
-      );
+  const fetchAndSetInsights = async () => {
+    const INSIGHTS = await getInsights();
 
-      const data = await res.json();
-      return data;
-    } catch (err) {
-      console.log("Error: ", err);
+    if (INSIGHTS.success && Array.isArray(INSIGHTS.data)) {
+      setList(INSIGHTS.data);
+    } else {
+      setList([]);
     }
+    setNewInsightsLoaded(false);
   };
 
   const fetchCommits = async (repos: string[], pastNumDays: number) => {
@@ -121,7 +120,9 @@ export default function Home() {
       const COMMIT_DATA: ICommitContainer[] = await Promise.all(
         REPO_SHA.map(async (repo) => {
           const SHA_CONTENT_PER_REPO = await Promise.all(
-            repo.commit_sha.map((sha) => fetchSHAContent(repo.repoName, sha))
+            repo.commit_sha.map((sha) =>
+              fetchSHAContent(repo.repoName, sha, session?.accessToken ?? "")
+            )
           );
           const content = {
             repoName: repo.repoName,
@@ -131,68 +132,39 @@ export default function Home() {
         })
       );
 
-      const PAYLOADS: IRepoSection[] = COMMIT_DATA.map((commitContainer) => {
-        return {
-          repo: commitContainer.repoName,
-          payload: buildLLMPayload(commitContainer),
-        };
-      }).filter((commitData) => commitData.payload.length > 0);
+      const repoSections: IRepoSection[] = COMMIT_DATA.map(
+        (commitContainer) => {
+          return {
+            repo: commitContainer.repoName,
+            payload: buildLLMPayload(commitContainer),
+          };
+        }
+      ).filter((commitData) => commitData.payload.length > 0);
 
-      const INSIGHTS: IInsight = await generateInsights(
-        PAYLOADS,
-        sinceISO,
-        pastNumDays
-      );
+      try {
+        const INSIGHT_RESPONSE: IInsightResponse = await generateInsights(
+          repoSections,
+          sinceISO,
+          pastNumDays
+        );
 
-      if (INSIGHTS && !INSIGHTS.error) {
-        saveInsights(INSIGHTS).then(() => {
-          setNewInsightsLoaded(true);
-        });
-      } else {
-        console.error("No commits to parse!");
+        setLoadingInsights(false);
+
+        if (INSIGHT_RESPONSE.empty) {
+          toast("No commits found.");
+          return;
+        }
+
+        if (!INSIGHT_RESPONSE.success) {
+          toast.error(INSIGHT_RESPONSE.error || "Failed to generate insights.");
+          return;
+        }
+
+        await saveInsights(INSIGHT_RESPONSE.data);
+        setNewInsightsLoaded(true);
+      } catch (err) {
+        console.error("Error: ", err);
       }
-    }
-
-    setLoadingInsights(false);
-  };
-
-  async function generateInsights(
-    sections: IRepoSection[],
-    sinceISO: string,
-    pastNumDays: number
-  ) {
-    const res = await fetch("/api/generate-insights", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sections, sinceISO, pastNumDays }),
-    });
-    return res.json();
-  }
-
-  async function saveInsights(insights: IInsight) {
-    return await fetch("/api/save-summary", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(insights),
-    })
-      .then(() => {
-        console.log("Saved insights!");
-      })
-      .catch((err) => {
-        console.error("Couldnt save insights: ", err);
-      });
-  }
-
-  const getInsights = async () => {
-    try {
-      // setLoadingList(true);
-      const res = await fetch("/api/summaries");
-      const data = await res.json();
-
-      setList(data.items ?? []);
-    } finally {
-      // setLoadingList(false);
-      setNewInsightsLoaded(false);
     }
   };
 
@@ -282,7 +254,7 @@ export default function Home() {
                 <p className="text-gray-400 text-sm mb-4">
                   Select up to 3 repositories and click{" "}
                   <span className="text-[#e54a66] font-semibold">Generate</span>{" "}
-                  to create your first summary.
+                  to create your first insight.
                 </p>
               </div>
             </div>
@@ -290,7 +262,7 @@ export default function Home() {
             <InsightsPage
               list={list}
               getInsights={() => {
-                getInsights();
+                fetchAndSetInsights();
               }}
             />
           )}

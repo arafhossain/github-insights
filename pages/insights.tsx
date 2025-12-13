@@ -1,23 +1,12 @@
 import { useEffect, useState } from "react";
 import Renderer from "./renderer";
+import { IInsight } from "@/models/IInsight";
 
-export type SummaryListItem = {
+type InsightRow = {
   id: string;
   createdAt: string;
   repos: string;
-  sinceISO: string;
-  model: string;
-  promptTok?: number | null;
-  compTok?: number | null;
-  totalTok?: number | null;
-  costUSD?: number | null;
-};
-
-type SummaryRow = {
-  id: string;
-  createdAt: string;
-  repos: string;
-  sinceISO: string;
+  since: string;
   model: string;
   content: string;
   promptTok?: number | null;
@@ -27,13 +16,13 @@ type SummaryRow = {
 };
 
 interface InsightsPageProps {
-  list: SummaryListItem[];
+  list: IInsight[];
   getInsights: () => void;
 }
 
 export default function InsightsPage({ list, getInsights }: InsightsPageProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [detail, setDetail] = useState<SummaryRow | null>(null);
+  const [detail, setDetail] = useState<InsightRow | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
   useEffect(() => {
@@ -50,7 +39,7 @@ export default function InsightsPage({ list, getInsights }: InsightsPageProps) {
     (async () => {
       try {
         setLoadingDetail(true);
-        const res = await fetch(`/api/summary/${selectedId}`);
+        const res = await fetch(`/api/insight/${selectedId}`);
         const row = await res.json();
         setDetail(row);
       } finally {
@@ -75,7 +64,7 @@ export default function InsightsPage({ list, getInsights }: InsightsPageProps) {
   }
 
   const deleteInsight = async (insightId: string): Promise<void> => {
-    await fetch(`/api/summary/${insightId}`, { method: "DELETE" });
+    await fetch(`/api/insight/${insightId}`, { method: "DELETE" });
   };
 
   return (
@@ -190,7 +179,7 @@ export default function InsightsPage({ list, getInsights }: InsightsPageProps) {
             marginBottom: 8,
           }}
         >
-          <h2 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>Summary</h2>
+          <h2 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>Insight</h2>
           {detail?.content && (
             <div style={{ display: "flex", gap: 8 }}>
               <button
@@ -204,7 +193,7 @@ export default function InsightsPage({ list, getInsights }: InsightsPageProps) {
                 href={`data:text/plain;charset=utf-8,${encodeURIComponent(
                   detail.content
                 )}`}
-                download={`weekly-summary-${detail.id}.txt`}
+                download={`weekly-insight-${detail.id}.txt`}
                 className="btn btn-utility"
               >
                 Download .txt
@@ -225,8 +214,7 @@ export default function InsightsPage({ list, getInsights }: InsightsPageProps) {
           <div>
             <div style={{ fontSize: 13, color: "#64748b", marginBottom: 12 }}>
               Repos: {detail.repos} • Since:{" "}
-              {formatDate(detail.sinceISO?.slice(0, 10))} • Model:{" "}
-              {detail.model}
+              {formatDate(detail.since?.slice(0, 10))} • Model: {detail.model}
               {typeof detail.costUSD === "number" && (
                 <> • Cost: ${detail.costUSD.toFixed(6)}</>
               )}

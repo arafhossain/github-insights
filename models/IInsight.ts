@@ -1,11 +1,26 @@
 export interface IInsight {
-  error?: string;
-  summary: string;
+  insight: string;
   usage: Usage;
   costUSD: number;
   model: string;
   repos: string[];
-  sinceISO: Date;
+  sinceISO: string;
+  id: string;
+  createdAt: string;
+}
+
+export interface IInsightResponse {
+  success: boolean;
+  empty: boolean;
+  data: IInsight | null;
+  error?: string;
+}
+
+export interface IInsightsResponse {
+  success: boolean;
+  empty: boolean;
+  data: IInsight[] | null;
+  error?: string;
 }
 
 export interface Usage {
