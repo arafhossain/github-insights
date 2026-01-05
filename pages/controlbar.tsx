@@ -2,9 +2,14 @@ import { useSession } from "next-auth/react";
 import { useState, useMemo } from "react";
 import { useRepos } from "@/hooks/useRepos";
 import Spinner from "./spinner";
-import { InsightListItem } from "./insights";
-import { fetchAutomateRepos, saveAutomateRepos } from "@/utils/helpers";
+import {
+  clearCode,
+  fetchAutomateRepos,
+  saveAutomateRepos,
+  validateCode,
+} from "@/utils/helpers";
 import { IInsight } from "@/models/IInsight";
+import toast from "react-hot-toast";
 
 export default function ControlBar({
   onGenerate,
@@ -21,15 +26,18 @@ export default function ControlBar({
   const { repos, loading, error, refresh } = useRepos(token);
   const [selected, setSelected] = useState<string[]>([]);
   const [selectedAutomate, setSelectedAutomate] = useState<string[]>([]);
-  const [sinceDays, setSinceDays] = useState(7);
   const [automateModalOpen, setAutomateModalOpen] = useState(false);
   const [automateReposResponse, setAutoReposResponse] = useState<{
     succeeded: boolean;
     success: number;
     failed: number;
   } | null>(null);
-  const [autoGenerate, setAutoGenerate] = useState(false);
+  const [generateModalOpen, setGenerateModalOpen] = useState(false);
+  const [demoCode, setDemoCode] = useState("");
+  const [sinceDays, setSinceDays] = useState(7);
+
   const [savingInsightAction, setSavingInsightAction] = useState(false);
+  const [validCode, setValidCode] = useState(false);
 
   const canGenerate = selected.length >= 1 && selected.length <= 3 && !loading;
 
@@ -59,32 +67,30 @@ export default function ControlBar({
     setSavingInsightAction(false);
   };
 
-  const handleSaveAutomation = () => {
+  const handleSaveAutomation = async () => {
     setSavingInsightAction(true);
 
-    saveAutomateRepos(selectedAutomate)
-      .then((res) => {
-        if (res && res.success) {
-          setAutoReposResponse({
-            succeeded: true,
-            success: res.succeeded,
-            failed: res.failed,
-          });
-        } else {
-          setAutoReposResponse({ succeeded: false, success: 0, failed: 0 });
-        }
-      })
-      .catch((err) => {
-        console.error("Error: ", err);
+    try {
+      const RESPONSE = await saveAutomateRepos(selectedAutomate);
+      if (RESPONSE && RESPONSE.success) {
         setAutoReposResponse({
-          succeeded: false,
-          success: 0,
-          failed: 0,
+          succeeded: true,
+          success: RESPONSE.succeeded,
+          failed: RESPONSE.failed,
         });
-      })
-      .finally(() => {
-        setSavingInsightAction(false);
+      } else {
+        setAutoReposResponse({ succeeded: false, success: 0, failed: 0 });
+      }
+    } catch (err) {
+      console.error("Error: ", err);
+      setAutoReposResponse({
+        succeeded: false,
+        success: 0,
+        failed: 0,
       });
+    } finally {
+      setSavingInsightAction(false);
+    }
   };
 
   return (
@@ -156,7 +162,6 @@ export default function ControlBar({
               </div>
             </details>
           </div>
-          {/* Refresh (manual) */}
           <button
             onClick={refresh}
             className="btn btn-secondary"
@@ -166,7 +171,6 @@ export default function ControlBar({
           </button>
         </div>
 
-        {/* Right group */}
         <div className="flex items-center gap-3">
           <select
             value={sinceDays}
@@ -177,10 +181,9 @@ export default function ControlBar({
             <option value={14}>Last 14 days</option>
             <option value={30}>Last 30 days</option>
           </select>
-
           <button
             onClick={() => {
-              onGenerate(selected, sinceDays);
+              setGenerateModalOpen(true);
             }}
             disabled={!canGenerate}
             className={`${
@@ -200,6 +203,83 @@ export default function ControlBar({
           </button>
         </div>
       </div>
+      {generateModalOpen && (
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center"
+          style={{ zIndex: 1000 }}
+        >
+          <div className="bg-[#1a1a1a] rounded-lg p-6 w-[420px] text-gray-200 shadow-xl border border-white/10">
+            <h2 className="text-lg font-semibold mb-2">Generate Insights</h2>
+            <p className="text-sm mb-4 text-gray-400">
+              We’ll analyze your selected repositories and generate a concise
+              summary of your recent work.
+            </p>
+
+            <div className="mb-4">
+              <label className="block text-xs uppercase tracking-wide text-gray-400 mb-1">
+                Demo Access Code
+              </label>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <input
+                  type="password"
+                  value={demoCode}
+                  onChange={(e) => setDemoCode(e.target.value)}
+                  className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-gray-200 placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-[#b21e35]"
+                  placeholder="Enter access code"
+                />
+                <button
+                  className={`btn ${
+                    demoCode && demoCode.trim().length > 0
+                      ? "btn-secondary"
+                      : "btn-disabled"
+                  }`}
+                  disabled={!Boolean(demoCode && demoCode.trim().length > 0)}
+                  onClick={async () => {
+                    try {
+                      await validateCode(demoCode);
+                      toast.success("Demo code valid.");
+                      setValidCode(true);
+                    } catch (err) {
+                      console.error("Err:", err);
+                      await clearCode();
+                      toast.error("Demo code invalid.");
+                      setValidCode(false);
+                    }
+                  }}
+                >
+                  Validate
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-gray-500">
+                Required to run AI parsing on this demo instance.
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                className="btn btn-secondary"
+                onClick={() => {
+                  setGenerateModalOpen(false);
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className={`btn  ${
+                  !validCode ? "btn-disabled" : "btn-primary"
+                }`}
+                disabled={!validCode}
+                onClick={() => {
+                  onGenerate(selected, sinceDays);
+                  setGenerateModalOpen(false);
+                }}
+              >
+                Generate
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {automateModalOpen && (
         <div
           className="fixed inset-0 bg-black/70 flex items-center justify-center"
@@ -278,10 +358,15 @@ export default function ControlBar({
                       automateReposResponse.failed === 0 && (
                         <div className="flex items-center gap-2 text-green-400">
                           <span>✅</span>
-                          <span>
-                            Successfully saved {automateReposResponse.success}{" "}
-                            repos for automation.
-                          </span>
+                          {automateReposResponse.success === 0 && (
+                            <span>Cleared automation for all repos.</span>
+                          )}
+                          {automateReposResponse.success > 0 && (
+                            <span>
+                              Successfully saved {automateReposResponse.success}{" "}
+                              repos for automation.
+                            </span>
+                          )}
                         </div>
                       )}
 

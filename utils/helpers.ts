@@ -1,6 +1,29 @@
 import { IInsight, IInsightsResponse } from "@/models/IInsight";
 import { IRepoSection } from "@/pages";
-import toast from "react-hot-toast";
+
+export async function apiFetch(url: string, options?: RequestInit) {
+  const res = await fetch(url, { credentials: "same-origin", ...options });
+  let data: any = null;
+
+  try {
+    data = await res.json();
+  } catch {}
+
+  if (!res.ok) {
+    const msg =
+      data?.error ||
+      data?.message ||
+      `Request to ${url} failed (${res.status})`;
+
+    const e = new Error(msg) as Error & { status?: number; body?: any };
+    e.status = res.status;
+    e.body = data;
+
+    throw e;
+  }
+
+  return data;
+}
 
 export const handleFetchCommits = async (
   repoName: string,
@@ -28,6 +51,28 @@ export const handleFetchCommits = async (
   };
 };
 
+export const fetchSHAContent = async (
+  fullRepoName: string,
+  sha: string,
+  accessToken: string
+) => {
+  try {
+    const res = await fetch(
+      `/api/fetch-sha?fullRepoName=${fullRepoName}&sha=${sha}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    console.log("Error: ", err);
+  }
+};
+
 export const generateInsights = async (
   sections: IRepoSection[],
   sinceISO: string,
@@ -41,27 +86,6 @@ export const generateInsights = async (
   };
 
   return apiFetch(url, options);
-};
-
-export async function saveAutomateRepos(repos: string[]) {
-  const url = "/api/save-repos";
-  const options = {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ selectedRepos: repos }),
-  };
-
-  return apiFetch(url, options);
-}
-
-export const fetchAutomateRepos = async () => {
-  const url = "/api/fetch-automate-repos";
-  try {
-    const data = await apiFetch(url);
-    return data.repos || [];
-  } catch {
-    return [];
-  }
 };
 
 export async function saveInsights(insightData: IInsight | null) {
@@ -87,52 +111,42 @@ export const getInsights = async (): Promise<IInsightsResponse> => {
   }
 };
 
-export async function apiFetch(url: string, options?: RequestInit) {
-  try {
-    const res = await fetch(url, options);
+export async function saveAutomateRepos(repos: string[]) {
+  const url = "/api/save-repos";
+  const options = {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ selectedRepos: repos }),
+  };
 
-    if (!res.ok) {
-      let err: any;
-      try {
-        err = await res.json();
-      } catch {}
-
-      const msg =
-        err?.error ||
-        err?.message ||
-        `Request to ${url} failed (${res.status})`;
-
-      toast.error(msg);
-      throw new Error(msg);
-    }
-
-    return res.json();
-  } catch (error) {
-    const msg =
-      error instanceof Error ? error.message : "Something went wrong.";
-    toast.error(msg);
-    throw error;
-  }
+  return apiFetch(url, options);
 }
 
-export const fetchSHAContent = async (
-  fullRepoName: string,
-  sha: string,
-  accessToken: string
-) => {
+export const fetchAutomateRepos = async () => {
+  const url = "/api/fetch-automate-repos";
   try {
-    const res = await fetch(
-      `/api/fetch-sha?fullRepoName=${fullRepoName}&sha=${sha}`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
-
-    const data = await res.json();
-    return data;
-  } catch (err) {
-    console.log("Error: ", err);
+    const data = await apiFetch(url);
+    return data.repos || [];
+  } catch {
+    return [];
   }
+};
+
+export const validateCode = async (demoCode: string) => {
+  const url = "/api/validate-code";
+  const options = {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code: demoCode }),
+  };
+  return apiFetch(url, options);
+};
+
+export const clearCode = async () => {
+  const url = "api/clear-code";
+  const options = {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  };
+  return apiFetch(url, options);
 };

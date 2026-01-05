@@ -1,3 +1,4 @@
+import { requireDemoAccess } from "@/lib/demoAccess";
 import { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(
@@ -7,6 +8,8 @@ export default async function handler(
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed." });
   }
+
+  if (!requireDemoAccess(req, res)) return;
 
   const authHeader = req.headers.authorization;
 
@@ -48,11 +51,9 @@ export default async function handler(
 
     res.status(200).json({ commits });
   } catch (e) {
-    return res
-      .status(500)
-      .json({
-        error: "Internal Server Error",
-        detail: e instanceof Error ? e.message : String(e),
-      });
+    return res.status(500).json({
+      error: "Internal Server Error",
+      detail: e instanceof Error ? e.message : String(e),
+    });
   }
 }

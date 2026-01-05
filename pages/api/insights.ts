@@ -15,13 +15,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       take,
     });
   
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: items
     });
 
   } catch(e) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error:e instanceof Error ? e.message : String(e),
       data: null,

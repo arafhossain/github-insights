@@ -88,7 +88,7 @@ export default function Home() {
     setNewInsightsLoaded(false);
   };
 
-  const fetchCommits = async (repos: string[], pastNumDays: number) => {
+  const onGenerate = async (repos: string[], pastNumDays: number) => {
     setLoadingInsights(true);
 
     const sinceISO = new Date(
@@ -235,7 +235,7 @@ export default function Home() {
             </div>
           </header>
           <ControlBar
-            onGenerate={fetchCommits}
+            onGenerate={onGenerate}
             loadingInsights={loadingInsights}
             list={list}
           />
